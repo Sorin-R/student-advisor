@@ -88,6 +88,14 @@ for (const route of routes) {
   await fs.writeFile(path.join(dist, relative), renderDocument(route))
   manifest[publicPath] = relative
   if (route.pathname === '/') manifest[`${publicPath}/`] = relative
+  // Keep legacy, unprefixed public URLs crawlable while the canonical route
+  // remains the explicit English locale. Client-side language detection can
+  // still replace this initial document for returning Romanian visitors.
+  if (route.locale === 'en') {
+    const legacyPath = route.pathname === '/' ? '/' : route.pathname.replace(/\/$/, '')
+    manifest[legacyPath] = relative
+    if (route.pathname === '/') manifest[''] = relative
+  }
 }
 await fs.writeFile(path.join(dist, 'seo-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 
