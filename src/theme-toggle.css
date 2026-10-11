@@ -1,0 +1,42 @@
+/* Keep the control available in every header, including narrow mobile layouts. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.theme-toggle:hover { border-color: var(--orange); color: var(--orange); }
+.theme-toggle:focus-visible { outline: 2px solid var(--orange); outline-offset: 4px; }
+.theme-toggle svg { pointer-events: none; }
+.site-shell > .header { column-gap: clamp(12px, 2vw, 28px); }
+.portal-top { gap: 16px; }
+.portal-top > .theme-toggle { margin-left: auto; }
+.content-header-actions > .theme-toggle { flex-shrink: 0; }
+
+@media (max-width: 1024px) {
+  .site-shell > .header:not(.content-header):not(.detail-header) { grid-template-columns: 1fr auto auto; column-gap: 10px; }
+  .site-shell > .header > .theme-toggle { grid-column: 2; grid-row: 1; }
+  .site-shell > .header > .menu-button { grid-column: 3; grid-row: 1; }
+}
+@media (max-width: 650px) {
+  .portal-top { height: auto; min-height: 72px; flex-wrap: wrap; padding-top: 14px; padding-bottom: 14px; gap: 14px; }
+  .portal-top > .portal-nav { width: 100%; flex-wrap: wrap; gap: 14px; }
+  .portal-top > .theme-toggle { margin-left: auto; }
+  .detail-header > .theme-toggle { margin-left: auto; }
+  .site-shell > .content-header { column-gap: 12px; }
+}
+
+.detail-header { height: auto; min-height: 82px; flex-wrap: wrap; gap: 12px; padding-top: 14px; padding-bottom: 14px; }
+.detail-header .detail-back { margin-right: 0; }
+.dashboard-page .student-account-language { position: static; display: flex; }
+@media (max-width: 800px) {
+  .detail-header > .logo { width: 100%; }
+}

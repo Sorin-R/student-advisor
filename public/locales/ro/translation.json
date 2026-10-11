@@ -1,0 +1,328 @@
+{
+  "navigation": {
+    "aria": "Ghid pentru studenți",
+    "freeAdvisory": "Consiliere gratuită",
+    "studyUk": "Studii în Regatul Unit",
+    "admission": "Admitere universitară",
+    "homepageFaq": "Întrebări despre costuri",
+    "blog": "Articole",
+    "apply": "Începe o aplicație",
+    "applyShort": "Aplică"
+  },
+  "footer": {
+    "tagline": "Îi ajutăm pe studenți să înceapă următorul capitol."
+  },
+  "pages": {
+    "home": {
+      "seo": {
+        "title": "Consiliere gratuită pentru universități din UK | Student Advisor",
+        "description": "Primește îndrumare practică gratuită pentru alegerea universității, documente de admitere, termene, burse și pregătirea aplicației."
+      },
+      "faq": {
+        "eyebrow": "Răspunsuri clare",
+        "title": "Întrebările studenților, explicate.",
+        "intro": "Informații directe despre costul consilierii, sesiunile de admitere, dreptul la muncă și documentele necesare.",
+        "items": [
+          {
+            "question": "Serviciile de consiliere pentru studenți sunt complet gratuite sau există costuri ascunse?",
+            "answer": "Serviciile noastre de consiliere sunt 100% gratuite și nu au taxe ascunse, deoarece sunt susținute integral de instituțiile academice partenere. Află cum funcționează sistemul nostru pe pagina",
+            "suffix": "cu detalii."
+          },
+          {
+            "question": "Care sunt principalele sesiuni de admitere la universitățile din Regatul Unit?",
+            "answer": "Cele două sesiuni principale sunt septembrie/octombrie (sesiunea majoră) și ianuarie/februarie (sesiunea secundară). Consultă ghidul complet al termenelor în pagina",
+            "suffix": "."
+          },
+          {
+            "question": "Ce documente poate solicita o aplicație universitară?",
+            "answer": "Cerințele diferă în funcție de instituție și curs, dar pot include calificări, foi matricole, recomandări, act de identitate, dovada limbii engleze și o scrisoare de motivație."
+          },
+          {
+            "question": "Ce documente sunt necesare pentru a obține o ofertă inițială de admitere?",
+            "answer": "Pentru o ofertă inițială sunt necesare, de regulă, foile matricole, copia pașaportului, o scrisoare de motivație și două scrisori de recomandare."
+          }
+        ]
+      }
+    },
+    "free-student-advisory": {
+      "seo": {
+        "title": "Consiliere gratuită: ghid pas cu pas pentru studii în UK",
+        "description": "Înțelege cum funcționează consilierea gratuită, de la evaluarea profilului și verificarea documentelor până la selecția universităților și pregătirea aplicației."
+      },
+      "eyebrow": "Consiliere gratuită",
+      "title": "Un traseu universitar mai clar, fără costuri pentru tine.",
+      "dek": "Consilierea gratuită oferă viitorilor studenți sprijin personalizat pentru alegerea cursurilor, pregătirea documentelor și planificarea aplicațiilor, fără taxă de consultanță.",
+      "sections": [
+        {
+          "heading": "Ce este consilierea gratuită și cum te ajută?",
+          "answer": "Consilierea gratuită este un serviciu fără costuri care corelează profilul academic, obiectivele și bugetul tău cu opțiuni potrivite și construiește un calendar personalizat al aplicației.",
+          "paragraph": "Un consilier îți analizează situația, explică rutele realiste și identifică următorii pași importanți. Serviciul este susținut de instituțiile academice partenere, astfel încât studenții nu plătesc consultații și nu întâlnesc taxe ascunse de consiliere."
+        },
+        {
+          "heading": "Ce se întâmplă pe parcursul procesului de consiliere?",
+          "answer": "Procesul are patru etape clare: evaluarea profilului, pregătirea documentelor, selecția universităților și verificarea aplicației.",
+          "listType": "ordered",
+          "items": [
+            {
+              "title": "Evaluarea profilului",
+              "text": "Analizăm calificările, domeniile de interes, locația preferată, bugetul și sesiunea dorită pentru a stabili un punct de plecare realist."
+            },
+            {
+              "title": "Pregătirea documentelor",
+              "text": "Organizăm foile matricole, recomandările, actele de identitate și scrisoarea de motivație conform cerințelor fiecărei instituții.",
+              "link": "admission"
+            },
+            {
+              "title": "Selecția universităților",
+              "text": "Comparăm cerințele de admitere, potrivirea cursului, taxele, locația și oportunitățile înainte de a agrea o listă echilibrată."
+            },
+            {
+              "title": "Verificarea aplicației",
+              "text": "Verificăm cerințele publicate de universitatea selectată, ajutăm la organizarea aplicației și explicăm următorii pași ai admiterii academice."
+            }
+          ]
+        },
+        {
+          "heading": "De ce contează o strategie bună de aplicare?",
+          "answer": "O strategie bună contează deoarece o aplicație exactă, completă și bine poziționată reduce întârzierile evitabile și ajută echipa de admitere să evalueze compatibilitatea academică.",
+          "paragraph": "Nu există o creștere universală a șanselor și niciun consilier responsabil nu poate garanta o ofertă. Avantajul măsurabil este procedural: cerințele sunt verificate din timp, termenele sunt planificate, documentele sunt adaptate cursului, iar opțiunile nepotrivite sunt identificate înainte de trimitere."
+        }
+      ]
+    },
+    "study-in-uk": {
+      "seo": {
+        "title": "Studii în UK: costuri, cursuri și traseul universitar",
+        "description": "Planifică studiile în Regatul Unit cu un ghid despre durata programelor, taxe, costuri regionale, burse, teste de engleză și documente de admitere."
+      },
+      "eyebrow": "Ghid pentru studii în UK",
+      "title": "Studiază în Regatul Unit cu un plan de încredere.",
+      "dek": "Regatul Unit oferă calificări recunoscute internațional și programe concentrate, însă fiecare student trebuie să verifice informațiile actuale despre curs, admitere și costuri înainte de a plăti.",
+      "sections": [
+        {
+          "heading": "De ce să alegi Regatul Unit pentru studii superioare?",
+          "answer": "Studenții aleg Regatul Unit pentru calificările recunoscute global, structura concentrată a programelor și mediul academic internațional.",
+          "paragraph": "O licență cu normă întreagă durează de obicei trei ani în Anglia, Țara Galilor și Irlanda de Nord, iar multe programe masterale durează un an; în Scoția, licența durează frecvent patru ani. Durata cursului, anii de practică și acreditarea profesională diferă, deci verifică structura exactă la fiecare universitate."
+        },
+        {
+          "heading": "Ce buget ar trebui să pregătească un student internațional?",
+          "answer": "Un buget realist include taxele de școlarizare, cazarea, cheltuielile curente, transportul și o rezervă, nu doar taxa universitară.",
+          "paragraph": "Intervalele de mai jos sunt orientative, nu oferte. Taxele și costurile de trai diferă în funcție de curs, instituție, oraș și cazare, deci trebuie confirmate înainte de aplicare sau plata unui avans.",
+          "table": {
+            "headers": [
+              "Categorie",
+              "Interval orientativ",
+              "Ce trebuie verificat"
+            ],
+            "rows": [
+              [
+                "Taxe internaționale",
+                "Adesea £11.000–£38.000+ pe an",
+                "Taxa exactă și creșterile anuale"
+              ],
+              [
+                "Cazare",
+                "Diferă mult în funcție de oraș și proprietate",
+                "Durata contractului, avansul și utilitățile incluse"
+              ],
+              [
+                "Cheltuieli curente",
+                "Construiește un buget lunar personal",
+                "Mâncare, transport local, materiale și facturi"
+              ],
+              [
+                "Burse",
+                "Finanțările parțiale sunt mai frecvente decât cele integrale",
+                "Eligibilitatea, termenul și statutul taxei"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Ce documente pot fi necesare pentru o aplicație universitară?",
+          "answer": "Cerințele diferă, dar includ frecvent calificări academice, foi matricole, act de identitate, recomandări, scrisoare de motivație și dovada limbii engleze, dacă este solicitată.",
+          "paragraph": "Verifică lista exactă, formatul și termenul pe pagina oficială a cursului. Student Advisor poate ajuta la organizarea materialelor pentru aplicația academică, însă instituția decide dacă documentele îndeplinesc cerințele.",
+          "source": {
+            "label": "Citește ghidul UCAS pentru aplicații",
+            "url": "https://www.ucas.com/applying/applying-university"
+          }
+        }
+      ]
+    },
+    "university-admission": {
+      "seo": {
+        "title": "Admitere în UK: documente și termene universitare",
+        "description": "Navighează admiterea universitară cu un ghid practic despre UCAS, aplicații masterale, foi matricole, recomandări, scrisori de motivație și termene."
+      },
+      "eyebrow": "Ghid de admitere",
+      "title": "Construiește o aplicație completă și credibilă.",
+      "dek": "Admiterea universitară în Regatul Unit recompensează cercetarea corectă, dovezile clare și respectarea termenelor; cerințele diferă în funcție de instituție și program.",
+      "sections": [
+        {
+          "heading": "Cum funcționează procesul de admitere universitară?",
+          "answer": "Candidații la licență aplică de obicei prin UCAS, iar cei la master aplică frecvent direct la fiecare universitate, prin portalul propriu.",
+          "paragraph": "Candidații la licență aleg cursurile, trimit calificările, pregătesc răspunsurile scrise cerute și adaugă o recomandare în cadrul ciclului UCAS. Universitățile pot răspunde cu oferte necondiționate, condiționate sau respingeri. Procesele masterale diferă și pot include etape, portofolii, interviuri sau avansuri."
+        },
+        {
+          "heading": "Ce documente sunt esențiale pentru aplicație?",
+          "answer": "O aplicație completă necesită de regulă dovada identității, documente academice, texte relevante pentru curs și recomandări academice sau profesionale credibile.",
+          "listType": "unordered",
+          "items": [
+            {
+              "title": "Scrisoarea de motivație",
+              "text": "Leagă pregătirea academică, experiența relevantă și obiectivul viitor direct de cursul ales și folosește dovezi în locul afirmațiilor generale."
+            },
+            {
+              "title": "Scrisorile de recomandare",
+              "text": "Alege persoane care îți pot evalua pregătirea și comunică-le din timp cursul, termenul și instrucțiunile de trimitere."
+            },
+            {
+              "title": "Foi matricole și diplome",
+              "text": "Trimite documente complete și lizibile, plus traduceri autorizate dacă originalul nu este în limba acceptată."
+            },
+            {
+              "title": "CV academic sau profesional",
+              "text": "Prezintă educația, proiectele, experiența, cercetarea, premiile și competențele relevante în ordine cronologică inversă."
+            }
+          ]
+        },
+        {
+          "heading": "Care sunt termenele critice de aplicare?",
+          "answer": "Septembrie și ianuarie sunt principalele sesiuni de începere, însă termenul corect este întotdeauna cel publicat pentru cursul, universitatea și categoria exactă de candidat.",
+          "paragraph": "Pentru admiterea din 2027, UCAS indică 15 octombrie 2026, ora 18:00 în Regatul Unit, pentru Oxford, Cambridge și majoritatea programelor de medicină, stomatologie și medicină veterinară, iar 13 ianuarie 2027, ora 18:00, pentru considerarea egală la majoritatea celorlalte programe de licență. Aplicațiile întârziate pot fi analizate dacă există locuri, dar considerarea egală nu este garantată.",
+          "source": {
+            "label": "Verifică datele pentru 2027 la UCAS",
+            "url": "https://www.ucas.com/applying/applying-to-university/dates-and-deadlines-for-uni-applications"
+          }
+        }
+      ]
+    }
+  },
+  "marketing": {
+    "notice": "Aplicațiile pentru {{stage}} sunt deschise",
+    "startConversation": "Începe o conversație",
+    "nav": {
+      "explore": "Descoperă",
+      "universities": "Universități",
+      "howItWorks": "Cum funcționează",
+      "advice": "Sfaturi",
+      "saved": "Salvate",
+      "studentAccount": "Cont student",
+      "talkToAdvisor": "Vorbește cu un consilier",
+      "menu": "Deschide sau închide meniul"
+    },
+    "hero": {
+      "eyebrow": "Viitorul tău începe aici",
+      "title": "Deschide-ți lumea.",
+      "intro": "Parcursul spre universitățile din Regatul Unit, explicat mai clar. Găsește cursul potrivit, descoperă universități compatibile și primește consiliere gratuită de la oameni care cunosc procesul.",
+      "findOptions": "Descoperă opțiunile",
+      "ask": "Nu știi de unde să începi? Întreabă-ne"
+    },
+    "intro": {
+      "eyebrow": "De ce Student Advisor",
+      "title": "O alegere importantă. Un drum mai clar.",
+      "copy": "Există mai multe rute către o experiență universitară excelentă. Te ajutăm să alegi cu încredere, oferind îndrumare sinceră la fiecare pas."
+    },
+    "explore": {
+      "eyebrow": "Începe să explorezi",
+      "title": "Găsește următorul pas.",
+      "caption": "Caută instantaneu toate instituțiile după locația campusului sau curs.",
+      "placeholder": "Caută după locație sau curs",
+      "business": "Afaceri",
+      "computerScience": "Informatică",
+      "design": "Design",
+      "allCourses": "Toate cursurile"
+    },
+    "pathway": {
+      "eyebrow": "Consiliere gratuită",
+      "title": "Îndrumare de specialitate. Cost zero.",
+      "caption": "Serviciul nostru de consiliere universitară este complet gratuit. Nu există taxe, costuri ascunse sau obligația de a aplica.",
+      "promise": "Promisiunea noastră",
+      "promiseCopy": "Consiliere de la o persoană reală, fără costuri pentru tine — acum sau mai târziu.",
+      "talk": "Vorbește cu un consilier",
+      "steps": [
+        {
+          "title": "Spune-ne planurile tale",
+          "copy": "Împărtășește ce vrei să studiezi, unde ai vrea să locuiești și ce contează cel mai mult pentru tine."
+        },
+        {
+          "title": "Primește îndrumare clară",
+          "copy": "Un consilier te ajută să înțelegi universitățile, cerințele de admitere și următorul pas potrivit."
+        },
+        {
+          "title": "Aplică având sprijin",
+          "copy": "Primește sprijin practic și prietenos când ești pregătit să continui cu aplicația."
+        }
+      ]
+    },
+    "directory": {
+      "eyebrow": "Lista ta începe aici",
+      "title": "Locuri unde poți aparține.",
+      "count": "{{filtered}} din {{total}} instituții",
+      "results": "Rezultate pentru „{{query}}”",
+      "all": "Toate instituțiile partenere",
+      "caption": "Caută în toate locațiile și cursurile",
+      "moreInfo": "Mai multe informații",
+      "save": "Salvează {{name}}",
+      "noResults": "Nicio instituție nu corespunde locației sau cursului.",
+      "clear": "Șterge căutarea"
+    },
+    "story": {
+      "eyebrow": "Sfaturi pentru parcurs",
+      "title": "Fă o alegere care ți se potrivește.",
+      "copy": "De la scrisori de motivație la documentele aplicației, îndrumarea noastră practică te ajută să faci următorul pas cu încredere.",
+      "cta": "Primește consiliere gratuită"
+    },
+    "footer": {
+      "tagline": "Te ajutăm să deschizi următorul capitol.",
+      "terms": "Termeni și condiții",
+      "contact": "Contactează-ne"
+    },
+    "contact": {
+      "eyebrow": "Hai să vorbim",
+      "title": "Cu ce te putem ajuta?",
+      "intro": "Spune-ne puțin despre planurile tale, iar noi te vom ajuta să găsești drumul potrivit.",
+      "name": "Numele tău",
+      "namePlaceholder": "de exemplu, Alex Smith",
+      "email": "Adresa de e-mail",
+      "topic": "Cu ce ai dori ajutor?",
+      "select": "Alege o opțiune",
+      "message": "Mesaj",
+      "messagePlaceholder": "Spune-ne cum te putem ajuta…",
+      "send": "Trimite solicitarea",
+      "received": "Mesaj primit",
+      "thanks": "Vom reveni către tine.",
+      "reply": "Un consilier îți va răspunde într-o zi lucrătoare.",
+      "back": "Înapoi la explorare",
+      "topics": [
+        "Alegerea universității",
+        "Găsirea cursului potrivit",
+        "Sprijin pentru aplicație",
+        "Pregătirea documentelor"
+      ]
+    },
+    "university": {
+      "profile": "Profilul instituției",
+      "allInstitutions": "Toate instituțiile",
+      "apply": "Începe o aplicație",
+      "applyHelp": "Aplică cu ajutorul nostru",
+      "locations": "Locațiile campusurilor",
+      "courses": "Cursuri disponibile",
+      "browse": "Explorează instituțiile",
+      "placeholderLogo": "Sigla temporară pentru {{name}}"
+    },
+    "universityDescriptions": {
+      "aru-london": "ARU London oferă diplome validate de Anglia Ruskin University, într-un campus din estul Londrei orientat către carieră. Programele pun accent pe angajabilitate, învățare practică și sprijin din partea lectorilor cu experiență în industrie.",
+      "arden-university": "Arden University este specializată în educație superioară flexibilă, prin studiu mixt în campus și învățare complet online. Oferă programe de licență și master orientate spre carieră în afaceri, tehnologie, drept, psihologie și sănătate.",
+      "lcca-london-college-of-contemporary-arts": "LCCA este un colegiu creativ specializat din centrul Londrei, cu programe practice conectate strâns cu industria. Portofoliul său reunește moda, designul grafic, jocurile, ospitalitatea și afacerile creative.",
+      "lsc-london-school-of-commerce": "London School of Commerce colaborează cu universități britanice pentru a oferi calificări de licență și master. Centrele sale de predare se concentrează pe programe accesibile în afaceri, management și sănătate și asistență socială.",
+      "cecos-college": "CECOS College oferă educație flexibilă postliceală și superioară din centre de învățare din toată Anglia. Programele vocaționale combină studiul academic cu competențe practice, orientate spre angajare, și sprijin pentru cursanți.",
+      "gbs-global-banking-school": "GBS oferă educație superioară flexibilă, orientată spre industrie, în parteneriat cu universități recunoscute. Programele sale susțin o comunitate diversă de studenți în afaceri, finanțe, informatică, construcții, psihologie și sănătate.",
+      "william-college": "William College oferă educație superioară incluzivă, orientată spre carieră, în campusurile sale din Stratford și Leeds. Programele de afaceri și drept dezvoltă cunoștințe practice, precum și abilități de comunicare, analiză și rezolvare a problemelor.",
+      "canterbury-christ-church-university": "Canterbury Christ Church University este o universitate publică cu o prezență puternică în Kent. Este cunoscută pentru educația relevantă profesional în predare, sănătate, afaceri, discipline creative, științe și profesii.",
+      "bath-spa-university": "Bath Spa University combină o moștenire creativă îndelungată cu predare contemporană și facilități specializate. Cursurile sale acoperă arte, design, afaceri, educație, științe umaniste, muzică și științe în campusuri din Bath și din împrejurimi.",
+      "oxford-brookes-university": "Oxford Brookes University este o universitate modernă recunoscută pentru învățarea aplicată, legăturile cu industria și predarea bazată pe cercetare. Oferă un portofoliu extins, cu puncte forte în arhitectură, afaceri, sănătate, tehnologie și motorsport.",
+      "university-of-suffolk": "University of Suffolk este o universitate modernă, orientată spre comunitate, situată pe malul apei în Ipswich, cu un centru suplimentar în Londra. Predarea sa este modelată de parteneriate regionale și de industrie în afaceri, tehnologie, sănătate, știință și industrii creative.",
+      "pearson-college-london": "Pearson College London a reunit Pearson Business School și specialistul în formare creativă Escape Studios. Oferta sa specializată este asociată cu Escape Studios din North Greenwich, unde studenții studiază animație, jocuri și efecte vizuale într-un mediu apropiat de industrie."
+    }
+  }
+}

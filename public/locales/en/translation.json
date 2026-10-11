@@ -1,0 +1,328 @@
+{
+  "navigation": {
+    "aria": "Student guidance",
+    "freeAdvisory": "Free Student Advisory",
+    "studyUk": "Study in the UK",
+    "admission": "University Admission",
+    "homepageFaq": "Homepage cost FAQ",
+    "blog": "Blog",
+    "apply": "Start an application",
+    "applyShort": "Apply"
+  },
+  "footer": {
+    "tagline": "Helping students open up their next chapter."
+  },
+  "pages": {
+    "home": {
+      "seo": {
+        "title": "Free UK University Guidance | Student Advisor",
+        "description": "Get free, practical guidance for UK university selection, admission documents, deadlines, scholarships and application preparation."
+      },
+      "faq": {
+        "eyebrow": "Clear answers",
+        "title": "Student questions, answered.",
+        "intro": "Direct, practical information about the cost of advice, UK intakes, work rights and admission documents.",
+        "items": [
+          {
+            "question": "Are student advisory services entirely free, or are there hidden costs?",
+            "answer": "Our student advisory services are 100% free with no hidden charges, as we are fully supported by partner academic institutions. Learn more about how our system operates on our",
+            "suffix": "details page."
+          },
+          {
+            "question": "What are the primary academic intake cycles for UK universities?",
+            "answer": "The two primary academic intakes for UK universities are the September/October intake (major cycle) and the January/February intake (secondary cycle). Review the comprehensive deadline chart on our",
+            "suffix": "guide."
+          },
+          {
+            "question": "Which documents may a university application require?",
+            "answer": "Requirements vary by institution and course, but applicants may be asked for qualifications, transcripts, references, identification, an English-language result and a personal statement."
+          },
+          {
+            "question": "What documents are required to secure an initial university offer?",
+            "answer": "To secure an initial university offer, you must provide your academic transcripts, a passport copy, a Statement of Purpose (SOP), and two letters of recommendation."
+          }
+        ]
+      }
+    },
+    "free-student-advisory": {
+      "seo": {
+        "title": "Free Student Advisory: Step-by-Step UK Guidance",
+        "description": "Understand how free student advisory works, from profile assessment and document review to UK university shortlisting and application preparation."
+      },
+      "eyebrow": "Free student guidance",
+      "title": "A clearer university journey, at no cost to you.",
+      "dek": "Free Student Advisory gives prospective students structured, personalised support for choosing courses, preparing documents and planning applications without charging the student an advisory fee.",
+      "sections": [
+        {
+          "heading": "What is Free Student Advisory, and how does it help you?",
+          "answer": "Free Student Advisory is a cost-free guidance service that matches your academic profile, goals and budget with suitable study options and builds a personalised application timeline.",
+          "paragraph": "An adviser reviews your circumstances, explains realistic routes and identifies the actions that matter next. The service is supported by partner academic institutions, so students do not pay a consultation charge or encounter hidden advisory fees."
+        },
+        {
+          "heading": "What happens during the advisory journey?",
+          "answer": "The advisory journey moves through four accountable stages: profile assessment, document preparation, university shortlisting and application review.",
+          "listType": "ordered",
+          "items": [
+            {
+              "title": "Profile assessment",
+              "text": "We review your qualifications, subject interests, preferred location, budget and intended intake to establish an evidence-based starting point."
+            },
+            {
+              "title": "Document compilation",
+              "text": "We organise transcripts, references, identification and the Statement of Purpose against the requirements of each selected institution.",
+              "link": "admission"
+            },
+            {
+              "title": "University shortlisting",
+              "text": "We compare entry requirements, course fit, tuition, location and progression outcomes before agreeing a balanced shortlist."
+            },
+            {
+              "title": "Application review",
+              "text": "We check the selected university’s published requirements, help organise the application and explain the next academic-admission steps."
+            }
+          ]
+        },
+        {
+          "heading": "Why does strategic application guidance matter?",
+          "answer": "Strategic guidance matters because an accurate, complete and well-positioned application reduces avoidable delays and makes it easier for an admissions team to assess academic fit.",
+          "paragraph": "There is no universal admissions uplift that applies to every applicant, and no responsible adviser should guarantee an offer. The measurable advantage is procedural: requirements are checked earlier, deadlines are mapped, documents are tailored to the course and unsuitable choices are identified before submission."
+        }
+      ]
+    },
+    "study-in-uk": {
+      "seo": {
+        "title": "Study in the UK: Costs, Courses and Degree Roadmap",
+        "description": "Plan UK study with a clear guide to degree lengths, tuition ranges, regional living costs, scholarships, English tests and admission documents."
+      },
+      "eyebrow": "UK study roadmap",
+      "title": "Study in the UK with a plan you can trust.",
+      "dek": "The UK offers internationally recognised qualifications and focused degree structures, but every student should verify current course, admission and financial information before committing funds.",
+      "sections": [
+        {
+          "heading": "Why choose the UK for higher education?",
+          "answer": "Students choose the UK for globally recognised qualifications, focused degree structures and access to a diverse international academic environment.",
+          "paragraph": "A full-time bachelor's degree commonly takes three years in England, Wales and Northern Ireland, while many taught master's degrees take one year; Scottish undergraduate structures often take four years. Course length, placement years and professional accreditation vary, so confirm the exact structure with each university."
+        },
+        {
+          "heading": "What financial framework should an international student use?",
+          "answer": "A realistic UK study budget combines tuition, accommodation, everyday living costs, travel and a contingency amount rather than relying on tuition alone.",
+          "paragraph": "The planning ranges below are indicative, not quotes. University fees and living costs vary by course, institution, city and accommodation choice, so confirm them before applying or paying a deposit.",
+          "table": {
+            "headers": [
+              "Planning category",
+              "Indicative range or measure",
+              "What to verify"
+            ],
+            "rows": [
+              [
+                "International tuition",
+                "Often £11,000–£38,000+ per year",
+                "Exact course fee and annual increases"
+              ],
+              [
+                "Accommodation",
+                "Varies substantially by city and property type",
+                "Contract length, deposit and included utilities"
+              ],
+              [
+                "Everyday living costs",
+                "Build a personal monthly budget",
+                "Food, local travel, study materials and bills"
+              ],
+              [
+                "Scholarships",
+                "Partial awards are more common than full funding",
+                "Eligibility, deadline and fee-status rules"
+              ]
+            ]
+          }
+        },
+        {
+          "heading": "Which documents may be needed for a university application?",
+          "answer": "Application requirements vary, but commonly include academic qualifications, transcripts, identification, references, a personal statement and evidence of English ability where required.",
+          "paragraph": "Check the exact list, format and deadline on the chosen university’s official course page. Student Advisor can help organise the requested academic application material, but the institution decides whether documents meet its requirements.",
+          "source": {
+            "label": "Read the UCAS application guidance",
+            "url": "https://www.ucas.com/applying/applying-university"
+          }
+        }
+      ]
+    },
+    "university-admission": {
+      "seo": {
+        "title": "UK University Admission: Documents and Deadlines",
+        "description": "Navigate UK university admission with a practical guide to UCAS, postgraduate applications, transcripts, references, personal statements and intake deadlines."
+      },
+      "eyebrow": "University admission guide",
+      "title": "Build a complete, credible university application.",
+      "dek": "UK university admission rewards accurate course research, clear evidence and disciplined deadline planning; requirements vary by institution and programme.",
+      "sections": [
+        {
+          "heading": "How does the University Admission process work?",
+          "answer": "UK undergraduate applicants usually apply through UCAS, while postgraduate applicants commonly apply directly to each university through its own admissions portal.",
+          "paragraph": "Undergraduate applicants select courses, submit qualifications, prepare the required written responses and add a reference within the UCAS cycle. Universities then make decisions that may be unconditional, conditional or unsuccessful. Postgraduate processes differ by provider and can include staged decisions, portfolios, interviews or deposits."
+        },
+        {
+          "heading": "Which documents belong in the essential application checklist?",
+          "answer": "A complete application normally needs identity evidence, academic records, course-specific written evidence and credible academic or professional references.",
+          "listType": "unordered",
+          "items": [
+            {
+              "title": "Statement of Purpose or personal statement",
+              "text": "Connect your academic preparation, relevant experience and future goal directly to the chosen course; use evidence rather than generic praise."
+            },
+            {
+              "title": "Academic reference letters",
+              "text": "Choose referees who can assess your readiness and give them the course context, deadline and submission instructions early."
+            },
+            {
+              "title": "Transcripts and certificates",
+              "text": "Provide complete, legible records and certified translations when the original document is not in the accepted language."
+            },
+            {
+              "title": "Academic or professional CV",
+              "text": "Present education, projects, work, research, awards and relevant skills in reverse chronological order without unexplained claims."
+            }
+          ]
+        },
+        {
+          "heading": "When are the critical application deadlines?",
+          "answer": "September and January are the principal UK entry cycles, but the correct deadline is always the one published for the exact course, university and applicant category.",
+          "paragraph": "For 2027 entry, UCAS lists 15 October 2026 at 18:00 UK time for Oxford, Cambridge and most medicine, dentistry and veterinary choices, and 13 January 2027 at 18:00 UK time as the equal-consideration deadline for most other undergraduate courses. A late application may still be considered where space remains, but equal consideration is not guaranteed. Many postgraduate courses use rolling admissions and can close once capacity is reached.",
+          "source": {
+            "label": "Verify 2027 application dates with UCAS",
+            "url": "https://www.ucas.com/applying/applying-to-university/dates-and-deadlines-for-uni-applications"
+          }
+        }
+      ]
+    }
+  },
+  "marketing": {
+    "notice": "Applications for {{stage}} are open",
+    "startConversation": "Start a conversation",
+    "nav": {
+      "explore": "Explore",
+      "universities": "Universities",
+      "howItWorks": "How it works",
+      "advice": "Advice",
+      "saved": "Saved",
+      "studentAccount": "Student account",
+      "talkToAdvisor": "Talk to an advisor",
+      "menu": "Toggle navigation"
+    },
+    "hero": {
+      "eyebrow": "Your future starts here",
+      "title": "Open up your world.",
+      "intro": "The UK university journey, made clearer. Find the right course, discover your best-fit universities and get free advice from people who know the process.",
+      "findOptions": "Find your options",
+      "ask": "Not sure where to start? Ask us"
+    },
+    "intro": {
+      "eyebrow": "Why Student Advisor",
+      "title": "Big choice. Clearer way forward.",
+      "copy": "There’s more than one route to a great university experience. We help you make a confident choice, with honest guidance at every step."
+    },
+    "explore": {
+      "eyebrow": "Start exploring",
+      "title": "Find your next step.",
+      "caption": "Search all institutions instantly by campus location or course.",
+      "placeholder": "Search by location or course",
+      "business": "Business",
+      "computerScience": "Computer science",
+      "design": "Design",
+      "allCourses": "All courses"
+    },
+    "pathway": {
+      "eyebrow": "Free student advisory",
+      "title": "Expert guidance. Zero cost.",
+      "caption": "Our university advisory service is completely free. There are no charges, no hidden fees and no obligation to apply.",
+      "promise": "Our promise",
+      "promiseCopy": "Advice from a real person, at no cost to you — now or later.",
+      "talk": "Talk to an advisor",
+      "steps": [
+        {
+          "title": "Tell us your plans",
+          "copy": "Share what you want to study, where you would like to live and what matters most to you."
+        },
+        {
+          "title": "Get clear guidance",
+          "copy": "An adviser helps you understand universities, entry requirements and your next best step."
+        },
+        {
+          "title": "Apply with support",
+          "copy": "Get practical, friendly support when you are ready to move forward with your application."
+        }
+      ]
+    },
+    "directory": {
+      "eyebrow": "Your shortlist starts here",
+      "title": "Places to belong.",
+      "count": "{{filtered}} of {{total}} institutions",
+      "results": "Results for “{{query}}”",
+      "all": "All partner institutions",
+      "caption": "Search across every location and course",
+      "moreInfo": "More Info",
+      "save": "Save {{name}}",
+      "noResults": "No institutions match that location or course.",
+      "clear": "Clear search"
+    },
+    "story": {
+      "eyebrow": "Advice for the journey",
+      "title": "Make a move that feels like you.",
+      "copy": "From personal statements to application documents, our practical guidance helps you take the next step with confidence.",
+      "cta": "Get free advice"
+    },
+    "footer": {
+      "tagline": "Helping students open up their next chapter.",
+      "terms": "Terms & Conditions",
+      "contact": "Contact us"
+    },
+    "contact": {
+      "eyebrow": "Let’s talk",
+      "title": "What’s on your mind?",
+      "intro": "Tell us a little about your plans and we’ll help you find a way forward.",
+      "name": "Your name",
+      "namePlaceholder": "e.g. Alex Smith",
+      "email": "Email address",
+      "topic": "What would you like help with?",
+      "select": "Select an option",
+      "message": "Message",
+      "messagePlaceholder": "Tell us how we can help...",
+      "send": "Send my enquiry",
+      "received": "Message received",
+      "thanks": "We’ll be in touch.",
+      "reply": "An advisor will reply within one working day.",
+      "back": "Back to exploring",
+      "topics": [
+        "Choosing a university",
+        "Finding the right course",
+        "Application support",
+        "Document preparation"
+      ]
+    },
+    "university": {
+      "profile": "Institution profile",
+      "allInstitutions": "All institutions",
+      "apply": "Start an application",
+      "applyHelp": "Apply with our help",
+      "locations": "Campus Locations",
+      "courses": "Courses Offered",
+      "browse": "Browse institutions",
+      "placeholderLogo": "{{name}} placeholder logo"
+    },
+    "universityDescriptions": {
+      "aru-london": "ARU London delivers Anglia Ruskin University-validated degrees from its career-focused campus in East London. Its programmes emphasise employability, practical learning and support from industry-experienced lecturers.",
+      "arden-university": "Arden University specialises in flexible higher education through blended campus study and fully online learning. It offers career-oriented undergraduate and postgraduate programmes across business, technology, law, psychology and healthcare.",
+      "lcca-london-college-of-contemporary-arts": "LCCA is a specialist creative college in central London offering practical programmes linked closely to industry. Its portfolio brings together fashion, graphic design, games, hospitality and creative business.",
+      "lsc-london-school-of-commerce": "The London School of Commerce works with British universities to deliver undergraduate and postgraduate qualifications. Its teaching centres focus particularly on accessible programmes in business, management and health and social care.",
+      "cecos-college": "CECOS College provides flexible further and higher education from learning centres across England. Its vocational programmes combine academic study with practical, employment-focused skills and learner support.",
+      "gbs-global-banking-school": "GBS delivers flexible, industry-focused higher education in partnership with recognised universities. Its programmes support a diverse student community across business, finance, computing, construction, psychology and health and social care.",
+      "william-college": "William College offers inclusive, career-focused higher education at its Stratford and Leeds campuses. Its business and law programmes develop practical knowledge alongside communication, analytical and problem-solving skills.",
+      "canterbury-christ-church-university": "Canterbury Christ Church University is a public university with a strong presence across Kent. It is known for professionally relevant education in teaching, health, business, creative subjects, sciences and the professions.",
+      "bath-spa-university": "Bath Spa University combines a long creative heritage with contemporary teaching and specialist facilities. Its courses span arts, design, business, education, humanities, music and sciences across distinctive campuses in and around Bath.",
+      "oxford-brookes-university": "Oxford Brookes University is a modern university recognised for applied learning, industry links and research-informed teaching. It offers a broad course portfolio with particular strengths in architecture, business, health, technology and motorsport.",
+      "university-of-suffolk": "The University of Suffolk is a modern, community-focused university based on the Ipswich Waterfront with an additional London centre. Its teaching is shaped by regional and industry partnerships across business, technology, health, science and the creative industries.",
+      "pearson-college-london": "Pearson College London brought together Pearson Business School and the creative training specialist Escape Studios. Its continuing specialist provision is associated with Escape Studios in North Greenwich, where students study animation, games and visual effects in an industry-style environment."
+    }
+  }
+}

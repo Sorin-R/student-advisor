@@ -1,0 +1,91 @@
+:root{--body-font:Arial,Helvetica,sans-serif;--display-font:Arial,Helvetica,sans-serif}
+html{scroll-padding-top:90px}
+*,*::before,*::after{font-family:var(--body-font)!important}
+em,i{font-style:normal!important}
+.site-shell>.header,.content-header{position:sticky;top:0;z-index:40}
+main#top{scroll-margin-top:82px}
+.site-shell>.header .nav a{font-size:12px;color:#5c5b5a;text-decoration:none}.site-shell>.header .nav a:hover{color:var(--orange)}
+.logo{display:inline-flex;align-items:center;gap:7px}
+.modal textarea{min-height:150px;padding:12px;border:1px solid var(--line);background:#fff;resize:vertical;outline-color:var(--orange)}
+@media(max-width:700px){.modal input,.modal select,.modal textarea{font-size:16px}}
+.modal-backdrop{z-index:100}
+@media(max-width:650px){.modal-backdrop{align-items:flex-start;overflow-y:auto;padding:12px}.modal{max-height:calc(100dvh - 24px);overflow-y:auto;padding:24px 20px}.modal h2{font-size:34px}.modal form{gap:12px}.modal textarea{min-height:105px;max-height:150px}}
+.logo::before{content:'';width:27px;height:27px;flex:0 0 27px;background:url('/university-logo-mark.png') center/contain no-repeat}
+.logo b{margin-left:0}
+@media(max-width:650px){.logo{gap:5px}.logo::before{width:23px;height:23px;flex-basis:23px}}
+main#top{display:flex;flex-direction:column}
+main#top>.hero{order:1}main#top>.intro-band{order:2}main#top>.explore-section{order:3}main#top>.universities{order:4}main#top>.pathway{order:5}main#top>.story{order:6}main#top>.faq-section{order:7}
+.hero-guide-links{position:absolute;z-index:2;left:50%;bottom:34px;transform:translateX(-50%);display:flex;justify-content:center;flex-wrap:wrap;gap:9px 20px;width:min(720px,calc(100% - 48px));padding-top:18px;border-top:1px solid rgba(255,255,255,.45)}.hero-guide-links a{color:#fff;font-size:11px;font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;white-space:nowrap}.hero-guide-links a::after{content:' →';color:var(--lime)}@media(max-width:650px){.hero-guide-links{bottom:24px;gap:11px 14px;padding-top:14px;width:calc(100% - 48px)}.hero-guide-links a{font-size:10px}}
+@media(min-width:651px){.hero-guide-links{border-top:0}}
+@media(min-width:651px) and (max-width:1024px){
+  .site-shell>.header{height:auto;min-height:76px;display:grid;grid-template-columns:1fr auto;gap:0;padding:10px 32px 0}
+  .site-shell>.header>.logo{grid-column:1;grid-row:1}
+  .site-shell>.header>.menu-button{grid-column:2;grid-row:1;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--line);font-size:18px}
+  .site-shell>.header>.nav{position:absolute;top:100%;left:0;right:0;display:none;flex-direction:column;gap:0;padding:14px 32px;background:var(--cream);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,19,27,.08)}
+  .site-shell>.header>.nav.open{display:flex}
+  .site-shell>.header>.nav button{padding:10px 0;text-align:left}
+  .site-shell>.header>.header-actions{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:16px;padding:12px 0 16px}
+  .site-shell>.header .saved-link{display:none}
+  .site-shell>.header .language-switcher{width:46px;min-width:46px;height:36px;padding:0}
+  .site-shell>.header .account-link{justify-self:center}
+  .site-shell>.header .header-cta{display:block;padding:12px 15px}
+  .hero{min-height:570px;padding:72px 56px 0}
+  .hero-copy{max-width:46%;z-index:3}
+  .hero h1{font-size:clamp(48px,6.5vw,64px);letter-spacing:-3.5px}
+  .hero-intro{max-width:330px;font-size:14px}
+  .hero-actions{gap:14px}
+  .hero-actions .button{padding:15px 16px}
+  .hero-visual{right:0;width:48%;height:100%}
+  .hero .image-one{width:235px;height:310px;right:22px;top:66px}
+  .hero .image-two{width:130px;height:175px;right:57%;bottom:105px;border-width:9px;z-index:1}
+  .hero .hero-sticker{right:43%;top:106px;padding:11px 14px;font-size:11px}
+  .hero .hero-sticker b{font-size:22px}
+  .hero .hero-sticker span{font-size:19px}
+  .hero-guide-links{bottom:24px;gap:12px 18px;padding-top:0}
+}
+.uni-footer{justify-content:flex-end!important}
+.uni-footer small{display:none}
+@media(max-width:650px){
+  .site-shell>.header{grid-template-columns:1fr auto;min-height:80px;padding:10px 20px 0}
+  .site-shell>.header>.logo{font-size:20px}
+  .site-shell>.header>.menu-button{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);font-size:18px}
+  .site-shell>.header>.header-actions{display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:12px;padding:11px 0 15px;border-top:0}
+  .site-shell>.header .saved-link{display:none}
+  .site-shell>.header .language-switcher{width:44px;min-width:44px;height:36px;padding:0}
+  .site-shell>.header .account-link{justify-self:center;font-size:11px}
+  .site-shell>.header .header-cta{padding:12px 14px;font-size:10px}
+  .site-shell>.header>.nav{z-index:10;border-top:1px solid var(--line)}
+  .site-shell>.header>.nav a{display:block;padding:2px 6px}
+  .hero{min-height:650px;padding:0 24px;display:flex;flex-direction:column}
+  .hero-copy{position:absolute;top:40%;left:24px;right:24px;max-width:none;width:auto;margin:0;transform:translateY(-50%);text-align:center}
+  .hero h1{max-width:345px;font-size:58px;line-height:.92;letter-spacing:-3.5px;margin:0 auto 22px}
+  .hero-intro{max-width:335px;font-size:14px;line-height:1.6;margin:0 auto 24px}
+  .hero-actions{justify-content:center;gap:14px;align-items:center}
+  .hero-actions .button{padding:15px 17px}
+  .hero-visual{display:none}
+  .hero-guide-links{bottom:28px;gap:10px 13px;padding-top:15px;width:calc(100% - 48px)}
+  .hero-guide-links a{font-size:9px}
+}
+
+/* Public content pages: keep the language control out of the logo's space. */
+@media(max-width:650px){
+  .content-header{
+    display:grid;
+    grid-template-columns:1fr;
+    height:auto;
+    min-height:0;
+    gap:12px;
+    padding:14px 20px 12px;
+  }
+  .content-header>.logo{grid-column:1;grid-row:1;min-width:0;font-size:18px}
+  .content-header .content-header-actions{grid-column:1;grid-row:2;display:flex;justify-content:flex-end;align-items:center;gap:10px}
+  .content-header .language-switcher{width:48px;min-width:48px;height:40px;padding:0}
+  .content-header .header-cta{display:block;width:auto;padding:13px 20px;text-align:center}
+  .content-header nav{grid-column:1/-1;grid-row:3;margin:0;padding-top:12px;padding-bottom:10px}
+}
+@media(max-width:320px){
+  .site-shell>.header>.header-actions{grid-template-columns:46px 1fr;row-gap:10px}
+  .site-shell>.header .header-cta{grid-column:1/-1;width:100%}
+  .hero-actions{flex-direction:column;gap:14px}
+  .hero-actions .button{min-width:170px}
+}

@@ -1,0 +1,40 @@
+{
+  "approved": true,
+  "updated": "2026-10-10",
+  "controller": "Terra Connect Ltd, trading as Student Advisor. Contact: Sorin Rotaru, 57 Tonbridge Drive, Basildon, SS15 6ND, United Kingdom",
+  "contactEmail": "info@student-advisor.co.uk",
+  "sections": [
+    {
+      "title": "Information we collect",
+      "body": "We collect the account and contact details you provide, including your name, email address and telephone number. If you use our university application service, we may also collect your address, date of birth, nationality, education history, course choices, personal statement information, emergency-contact details and documents such as a passport, transcript, reference, proof of address. We also keep support messages and limited security records needed to protect accounts and investigate misuse."
+    },
+    {
+      "title": "Why we use your information",
+      "body": "We use your information to create and protect your account, provide the university guidance or application support you request, communicate with you, review documents, respond to support enquiries and maintain the security and reliability of the service. Our legal bases may include taking steps at your request and providing the requested service, our legitimate interests in operating and securing Student Advisor, compliance with legal obligations, and consent where we specifically ask for it. You may withdraw consent where consent is the applicable basis, without affecting earlier lawful processing."
+    },
+    {
+      "title": "Who receives your information",
+      "body": "Authorized Terra Connect Ltd staff and advisers may access information when needed to support your case. We may use vetted providers for hosting, databases, email delivery, security, Google sign-in or address lookup. We share application information with a university or other recipient only where needed for the service you request or where you direct or authorize us to do so. We do not sell personal information. We may disclose information where the law requires it or where necessary to protect users, the service or legal rights."
+    },
+    {
+      "title": "Where information is processed",
+      "body": "Our service and providers may process information in the United Kingdom and in other countries used by our hosting, communications or Google services. Where information is transferred outside the United Kingdom, Terra Connect Ltd will use an applicable lawful transfer mechanism and appropriate contractual or organizational safeguards. You may contact us for more information about safeguards relevant to your information."
+    },
+    {
+      "title": "How long we keep information",
+      "body": "Incomplete accounts, draft applications and their documents are deleted after 12 months without activity; submitted or actively supported applications and their documents are kept while we provide the service and for up to 24 months after the last case activity; support messages are kept for up to 24 months; routine security and audit records are kept for up to 12 months. Rolling backups are removed within 30 days of leaving active backup rotation. We may keep specific records longer where required by law, for an active dispute or security investigation, or at your request. Information is deleted or anonymized when the applicable period ends."
+    },
+    {
+      "title": "Your choices and rights",
+      "body": "Depending on the circumstances, you may ask for access to your personal information, correction, deletion, restriction, portability or an objection to processing. You may also withdraw consent where processing relies on consent. Contact info@student-advisor.co.uk or write to the address above. We may need to verify your identity before acting on a request. You can complain to the UK Information Commissioner's Office if you believe your information has not been handled correctly."
+    },
+    {
+      "title": "Cookies and external services",
+      "body": "Student Advisor uses essential cookies for secure sign-in, session renewal, multi-factor authentication and Google sign-in state. These cookies are necessary for account features and are not used for advertising. The site may save a language preference on your device. If you choose Google sign-in or use an address feature powered by Google Maps, your browser communicates with Google under Google's own privacy terms. We will update this notice and obtain any required consent before introducing non-essential tracking."
+    },
+    {
+      "title": "Security and contact",
+      "body": "We use access controls, encrypted transport, account verification, multi-factor authentication for staff, private document storage, validation, session revocation and security logging to reduce risk. No service can guarantee absolute security. Contact info@student-advisor.co.uk promptly if you believe an account or document has been exposed, or if you have a privacy question about Student Advisor."
+    }
+  ]
+}

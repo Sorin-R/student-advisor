@@ -1,0 +1,16 @@
+node_modules
+.node_modules-cloud-backup-*/
+dist/
+.env
+*.log
+uploads/
+output/
+tmp/
+.DS_Store
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.sql
+*.sql.gz
+.github/workflows/

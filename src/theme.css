@@ -1,0 +1,355 @@
+:root {
+  color-scheme: light;
+}
+
+/* Keep text, raised surfaces and deliberately dark panels separate: the
+   original --ink token is also used as a background in the light design. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --cream: #151a21;
+  --ink: #f4f3ee;
+  --orange: #ff927b;
+  --lime: #34432d;
+  --blue: #213c48;
+  --line: #414956;
+  --theme-surface: #202731;
+  --theme-surface-soft: #1b222b;
+  --theme-surface-hover: #30323a;
+  --theme-muted: #b6bbc3;
+  --theme-inverse: #10131b;
+  --theme-lime-accent: #d9e77e;
+  --theme-success: #9cd6ae;
+  --theme-warning: #efbf7e;
+  --theme-error: #ffab9d;
+  --theme-warm-surface: #382a2a;
+  --theme-hero: #713b32;
+}
+
+/* The raster brand mark needs its own light silhouette on dark surfaces. */
+:root[data-theme="dark"] .logo::before {
+  filter: brightness(0) invert(1);
+}
+
+:root[data-theme="dark"] :is(.dashboard-page, .admin-page, .pathway, .detail-content, .faq-section) {
+  background: var(--theme-surface-soft);
+}
+
+:root[data-theme="dark"] :is(
+  .search-box, .uni-card, .detail-list-card, .auth-card, .auth-divider span,
+  .form-section, .google-button, .application-list-card, .empty-application,
+  .application-status-banner, .adviser-application, .adviser-detail,
+  .requested-documents-card,
+  .requested-documents-notice, .terms-content, .terms-acceptance,
+  .messages-list, .message-reader, .message-row, .message-badge,
+  .content-table-wrap table, .admin-panel, .blog-card, .recovery-codes pre,
+  .site-editor-file
+) {
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .messages-page .message-reader {
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .adviser-progress::before {
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] :is(.document-review-panel, .terms-contact) {
+  background: var(--theme-surface-soft);
+}
+
+:root[data-theme="dark"] :is(.adviser-error, .document-request-panel, .message-row.unread) {
+  background: var(--theme-warm-surface);
+}
+
+:root[data-theme="dark"] :is(
+  .document-row:hover, .adviser-application:hover, .adviser-application.active,
+  .message-row.active, .message-row:hover
+) {
+  background: var(--theme-surface-hover);
+}
+
+/* Preserve the site's colored sections with quieter nighttime surfaces. */
+:root[data-theme="dark"] :is(.hero, .story) {
+  background: var(--theme-hero);
+}
+
+:root[data-theme="dark"] .notice {
+  background: #512d28;
+}
+
+:root[data-theme="dark"] .hero .image-two {
+  border-color: var(--theme-hero);
+}
+
+:root[data-theme="dark"] :is(.hero-sticker, .search-box, .detail-logo-wrap) {
+  box-shadow: 7px 7px 0 var(--theme-inverse);
+}
+
+:root[data-theme="dark"] :is(.institution-logo, .detail-logo-wrap) {
+  background: var(--theme-surface);
+}
+
+:root[data-theme="dark"] .hero-guide-links a::after,
+:root[data-theme="dark"] :is(.advisor-help u, .adviser-stats strong) {
+  color: var(--theme-lime-accent);
+}
+
+:root[data-theme="dark"] :is(.free-advice-note span, .detail-hero-copy > p:not(.eyebrow)) {
+  color: #d6e0d6;
+}
+
+:root[data-theme="dark"] .progress-ring::before,
+:root[data-theme="dark"] :is(.progress-sidebar, .admin-sidebar, .adviser-stats div, .content-table-wrap th) {
+  background: var(--theme-inverse);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .progress-ring {
+  background: conic-gradient(
+    var(--orange) 0 var(--application-progress, 0%),
+    var(--theme-lime-accent) var(--application-progress, 0%) 100%
+  );
+}
+
+:root[data-theme="dark"] .adviser-progress {
+  background: conic-gradient(
+    var(--orange) 0 var(--progress, 0%),
+    var(--line) var(--progress, 0%) 100%
+  );
+}
+
+/* Primary actions invert independently of the panels above. */
+:root[data-theme="dark"] :is(.header-cta, .button-dark, .quick-links button:last-child) {
+  background: var(--ink);
+  color: var(--theme-inverse);
+  border-color: var(--ink);
+}
+
+:root[data-theme="dark"] :is(.header-cta:hover, .button-dark:hover, .quick-links button:last-child:hover) {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--theme-inverse);
+}
+
+:root[data-theme="dark"] .button-light {
+  background: var(--theme-surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] :is(.quick-links button, .course-tags span, .saved-link span, .document-check) {
+  background: #303844;
+  border-color: var(--line);
+  color: #d7dbe2;
+}
+
+:root[data-theme="dark"] .rank-pill {
+  background: #202731eb;
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] :is(.document-check.checked, .success-icon) {
+  background: var(--lime);
+  color: var(--theme-lime-accent);
+}
+
+:root[data-theme="dark"] .status-dot {
+  background: #9da5b1;
+}
+
+:root[data-theme="dark"] .status-dot.submitted {
+  background: var(--orange);
+}
+
+:root[data-theme="dark"] .status-dot.draft {
+  background: var(--theme-lime-accent);
+}
+
+:root[data-theme="dark"] .message-row.unread .message-avatar {
+  background: var(--orange);
+  color: var(--theme-inverse);
+}
+
+/* Hard-coded gray copy occurs across public, student and staff screens. */
+:root[data-theme="dark"] :where(
+  .nav button, .saved-link, .section-caption, .pathway-card p,
+  .search-box > span, .search-box kbd, .filters select, .filters > span,
+  .uni-city, .uni-description, .uni-footer, .uni-footer b,
+  footer p, .modal-intro, .close, .modal label, .success > p:not(.eyebrow),
+  .portal-top > button:not(.logo), .portal-nav button, .auth-copy,
+  .portal-field, .auth-divider span, .demo-note, .save-status,
+  .form-section-heading p, .document-row small, .detail-back,
+  .application-list-card span, .application-list-card small,
+  .empty-application p, .application-status-banner span,
+  .adviser-login > a, .adviser-toolbar button, .adviser-toolbar > span,
+  .adviser-application small, .adviser-detail-top > div:first-child > p:last-child,
+  .adviser-progress span, .adviser-section dt, .adviser-empty,
+  .document-request-pending, .requested-documents-card > p,
+  .document-review-row small, .document-review-status,
+  .terms-content p, .terms-acceptance p, .message-row small, .message-row em,
+  .message-meta, .messages-summary, .content-hero > p:last-child,
+  .content-article section p, .content-article li, .faq-answer p,
+  .admin-panel-heading > p, .moderator-card small, .admin-table-wrap td small,
+  .staff-create-form p, .blog-card span, .blog-article section p,
+  .blog-article section li, .site-editor-dialog > p, .site-editor-dialog small
+) {
+  color: var(--theme-muted);
+}
+
+:root[data-theme="dark"] .adviser-detail-top > div:first-child > p:last-child,
+:root[data-theme="dark"] .content-hero > p:last-child,
+:root[data-theme="dark"] .success > p:not(.eyebrow) {
+  color: var(--theme-muted);
+}
+
+:root[data-theme="dark"] .site-shell > .header .nav a,
+:root[data-theme="dark"] .content-header nav a {
+  color: var(--theme-muted);
+}
+
+:root[data-theme="dark"] :is(.content-article .direct-answer, .site-editor-dialog) {
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] :is(.content-article .content-section-number, .blog-article .content-section-number) {
+  color: var(--orange);
+}
+
+:root[data-theme="dark"] .blog-reading {
+  color: var(--theme-muted) !important;
+}
+
+:root[data-theme="dark"] :is(.universities .all-link, .source-link a) {
+  color: #b8d8e5;
+}
+
+:root[data-theme="dark"] :is(.portal-top > a:not(.logo), .privacy-link a, .auth-card p a, .account-security p a) {
+  color: var(--orange);
+}
+
+:root[data-theme="dark"] :is(
+  .nav button:hover, .saved-link:hover, .detail-back:hover,
+  .site-shell > .header .nav a:hover, .content-header nav a:hover,
+  .google-button:hover, .adviser-toolbar button.active
+) {
+  color: var(--orange);
+}
+
+/* Native controls need explicit text and surfaces in addition to color-scheme. */
+:root[data-theme="dark"] :is(
+  .modal input, .modal select, .modal textarea,
+  .portal-field input, .portal-field select, .portal-field textarea,
+  .admin-table-wrap select, .admin-search input,
+  .staff-create-form input, .staff-create-form select,
+  .site-editor-textarea textarea, .site-editor-toolbar select
+) {
+  background: var(--cream);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] :is(input, textarea)::placeholder {
+  color: #a6adb8;
+  opacity: 1;
+}
+
+:root[data-theme="dark"] :is(input, select, textarea) {
+  accent-color: var(--orange);
+}
+
+:root[data-theme="dark"] :is(
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible
+) {
+  outline-color: #91bcff;
+}
+
+:root[data-theme="dark"] :is(
+  .pathway-grid, .pathway-card, .filters > span, .uni-footer,
+  .form-section-heading, .document-row, .document-request-pending,
+  .adviser-section dl > div, .document-review-row,
+  .site-editor-file, .site-editor-dialog-actions button
+) {
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .document-row:hover {
+  border-color: var(--orange);
+}
+
+:root[data-theme="dark"] :is(.form-error, .delete-application, .document-status.rejected, .document-review-status.rejected) {
+  color: var(--theme-error);
+}
+
+:root[data-theme="dark"] :is(
+  .processed-label, .application-status-banner.complete strong,
+  .document-status.accepted, .document-review-status.accepted,
+  .document-review-actions .accept-document
+) {
+  color: var(--theme-success);
+}
+
+:root[data-theme="dark"] :is(.document-status.submitted, .document-review-status.submitted) {
+  color: var(--theme-warning);
+}
+
+:root[data-theme="dark"] .application-status-banner.in_review {
+  border-left-color: var(--theme-lime-accent);
+}
+
+:root[data-theme="dark"] .application-status-banner.in_review strong {
+  color: var(--theme-lime-accent);
+}
+
+:root[data-theme="dark"] .document-check.rejected {
+  background: #62362f;
+  color: var(--theme-error);
+}
+
+/* Editing controls and recovery codes follow the page theme; QR artwork keeps
+   its original white backing so it remains easy to scan. */
+:root[data-theme="dark"] .mfa-qr {
+  background: #fff;
+}
+
+:root[data-theme="dark"] .site-editor-dialog {
+  background: var(--theme-surface);
+  box-shadow: 8px 8px 0 var(--theme-inverse);
+}
+
+:root[data-theme="dark"] .site-editor-dialog-heading span {
+  color: var(--orange);
+}
+
+:root[data-theme="dark"] .site-editable {
+  outline-color: #b6bbc380;
+}
+
+:root[data-theme="dark"] .site-editor-toolbar {
+  border-color: var(--line);
+  box-shadow: 5px 5px 0 var(--theme-inverse);
+}
+
+:root[data-theme="dark"] .site-editor-toolbar button {
+  background: var(--theme-surface);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .site-editor-toolbar button:last-child {
+  background: var(--orange);
+  color: var(--theme-inverse);
+}
+
+:root[data-theme="dark"] .site-editor-dialog-actions .site-editor-save {
+  background: var(--ink);
+  color: var(--theme-inverse);
+}
+
+:root[data-theme="dark"] .site-editor-error {
+  color: var(--theme-error) !important;
+}
+
+:root[data-theme="dark"] .portal-top > .logo {
+  color: var(--ink);
+}

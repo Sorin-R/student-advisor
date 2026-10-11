@@ -1,0 +1,18 @@
+# Student Advisor
+
+> Student Advisor provides free, practical guidance for prospective international students exploring UK university study, applications and supporting documents.
+
+## About
+
+Student Advisor helps students compare suitable UK study options, understand admissions preparation and plan their next steps. Guidance is provided by advisers and is free for students.
+
+## Public guides
+
+- [Free Student Advisory](https://student-advisor.co.uk/free-student-advisory): How the free advisory journey works, from profile assessment to document preparation and university shortlisting.
+- [Study in the UK](https://student-advisor.co.uk/study-in-uk): A guide to UK study planning, degree routes, costs, English-language tests and application planning.
+- [University Admission](https://student-advisor.co.uk/university-admission): A guide to university applications, admissions documents and planning deadlines.
+- [Terms and Conditions](https://student-advisor.co.uk/terms): The terms for using Student Advisor services and the application platform.
+
+## Contact and applications
+
+Students can create an account and submit an enquiry through the Student Advisor website. Student accounts, Advisor workspaces and Admin workspaces are private and are not public reference material.

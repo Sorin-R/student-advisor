@@ -1,0 +1,15 @@
+{
+  "approved": false,
+  "updated": "2026-10-08",
+  "controller": "REPLACE_ME: legal person or company responsible for Student Advisor",
+  "contactEmail": "REPLACE_ME",
+  "sections": [
+    { "title": "Information we collect", "body": "[TO COMPLETE] Confirm account details, application fields, identity/education documents, emergency contacts, support messages, security logs, essential cookies and any analytics actually used." },
+    { "title": "Why we use information and our lawful basis", "body": "[TO COMPLETE] State each actual purpose and applicable lawful basis, including application advice, communications, account security and any marketing. Check the treatment of sensitive information and emergency-contact data." },
+    { "title": "Who receives information", "body": "[TO COMPLETE] Identify staff access, universities receiving submitted data, hosting/database/email providers, Google sign-in/Maps and other processors actually used. Explain when information is shared." },
+    { "title": "Where information is processed", "body": "[TO COMPLETE] Confirm hosting and processor regions, international transfers and relevant safeguards." },
+    { "title": "How long we keep information", "body": "[TO COMPLETE] Approve specific retention periods or criteria for accounts, drafts, submitted applications, documents, support messages, security logs, legacy files, backups and exported copies." },
+    { "title": "Your choices and rights", "body": "[TO COMPLETE] Explain how to request access, correction, deletion and other applicable rights, object or withdraw consent where relevant, and complain to the ICO. State the real contact and handling process." },
+    { "title": "Cookies and external services", "body": "[TO COMPLETE] Describe the essential session/MFA/OAuth cookies and saved interface preferences, as well as actual external sign-in/Maps requests. Confirm whether any nonessential tracking is deployed." }
+  ]
+}
