@@ -289,22 +289,36 @@ function AdvisorMessagesPage({ token, onBack, onSignOut, signOutError }) {
   const [messages, setMessages] = useState([])
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sort, setSort] = useState('newest')
   const [meta, setMeta] = useState({ total: 0, hasMore: false })
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   useEffect(() => {
     let active = true
-    const load = async () => { try { const result = await api(`/api/advisor/support-messages?page=${page}&limit=25`); if (active) { setMessages(result.messages || []); setMeta(result); setError('') } } catch (err) { if (active) setError(err.message) } }
+    const params = new URLSearchParams({ page: String(page), limit: '25', search, status: statusFilter, sort })
+    const load = async () => { try { const result = await api(`/api/advisor/support-messages?${params}`); if (active) { setMessages(result.messages || []); setMeta(result); setSelectedMessage(current => result.messages?.some(message => message.id === current?.id) ? current : null); setError('') } } catch (err) { if (active) setError(err.message) } }
     load(); const timer = window.setInterval(load, 30000)
     return () => { active = false; window.clearInterval(timer) }
-  }, [page, token])
+  }, [page, token, search, statusFilter, sort])
   const openMessage = async message => {
     setSelectedMessage(message)
     if (message.readAt) return
     setBusy(true)
     try { await api(`/api/advisor/support-messages/${message.id}/read`, { method: 'PATCH' }); setMessages(items => items.map(item => item.id === message.id ? { ...item, readAt: new Date().toISOString() } : item)) } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
-  return <div className="portal-page adviser-page"><div className="portal-top"><Link className="logo" to="/"><span>student</span><strong>advisor</strong><b>®</b></Link><ThemeToggle /><div className="portal-nav"><span>Adviser messages</span><button onClick={onSignOut}>Sign out</button></div></div><main className="adviser-main messages-page">{signOutError && <p role="alert" className="form-error">{signOutError}</p>}<button className="documents-back-link" onClick={onBack}>Back to applications</button><div className="adviser-heading"><h1>Student<br /><em>messages.</em></h1><span>{meta.total} messages</span></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="messages-layout"><section className="messages-list">{messages.map(message => <button disabled={busy} className={`${selectedMessage?.id === message.id ? 'message-row active' : 'message-row'}${message.readAt ? '' : ' unread'}`} key={message.id} onClick={() => openMessage(message)}><span className="message-avatar">{message.name?.[0]?.toUpperCase() || '?'}</span><span><strong>{message.name}</strong><small>{message.topic}</small><em>{new Date(message.createdAt).toLocaleString()}</em></span></button>)}{!messages.length && <p>No messages on this page.</p>}</section><section className="message-reader">{selectedMessage ? <><p className="eyebrow">{selectedMessage.topic}</p><h2>{selectedMessage.name}</h2><p className="message-meta">{selectedMessage.email} · {new Date(selectedMessage.createdAt).toLocaleString()}</p><div className="message-body">{selectedMessage.message}</div></> : <p>Select a message to read it.</p>}</section></div><div className="pagination"><button disabled={page === 1} onClick={() => { setSelectedMessage(null); setPage(page - 1) }}>Previous</button><span>Page {page}</span><button disabled={!meta.hasMore} onClick={() => { setSelectedMessage(null); setPage(page + 1) }}>Next</button></div></main></div>
+  const deleteMessage = async () => {
+    if (!selectedMessage || busy || !window.confirm(`Delete the message from ${selectedMessage.name}? This cannot be undone.`)) return
+    setBusy(true); setError('')
+    try {
+      await api(`/api/advisor/support-messages/${selectedMessage.id}`, { method: 'DELETE' })
+      setMessages(items => items.filter(item => item.id !== selectedMessage.id)); setSelectedMessage(null)
+      setMeta(current => ({ ...current, total: Math.max(0, current.total - 1) }))
+    } catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+  const updateFilter = setter => event => { setter(event.target.value); setPage(1); setSelectedMessage(null) }
+  return <div className="portal-page adviser-page"><div className="portal-top"><Link className="logo" to="/"><span>student</span><strong>advisor</strong><b>®</b></Link><ThemeToggle /><div className="portal-nav"><span>Adviser messages</span><button onClick={onSignOut}>Sign out</button></div></div><main className="adviser-main messages-page">{signOutError && <p role="alert" className="form-error">{signOutError}</p>}<button className="documents-back-link" onClick={onBack}>Back to applications</button><div className="adviser-heading"><h1>Student<br /><em>messages.</em></h1><span>{meta.total} messages</span></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="message-filters"><label>Search messages<input type="search" value={search} onChange={updateFilter(setSearch)} placeholder="Name, email, topic or message" /></label><label>Show<select value={statusFilter} onChange={updateFilter(setStatusFilter)}><option value="all">All messages</option><option value="unread">Unread</option><option value="read">Read</option></select></label><label>Sort by<select value={sort} onChange={updateFilter(setSort)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="unread_first">Unread first</option></select></label></div><div className="messages-layout"><section className="messages-list">{messages.map(message => <button disabled={busy} className={`${selectedMessage?.id === message.id ? 'message-row active' : 'message-row'}${message.readAt ? '' : ' unread'}`} key={message.id} onClick={() => openMessage(message)}><span className="message-avatar">{message.name?.[0]?.toUpperCase() || '?'}</span><span><strong>{message.name}</strong><small>{message.topic} · {message.readAt ? 'Read' : 'Unread'}</small><em>{new Date(message.createdAt).toLocaleString()}</em></span></button>)}{!messages.length && <p className="messages-empty">No messages match these filters.</p>}</section><section className="message-reader">{selectedMessage ? <><p className="eyebrow">{selectedMessage.topic}</p><h2>{selectedMessage.name}</h2><p className="message-meta">{selectedMessage.email} · {new Date(selectedMessage.createdAt).toLocaleString()}</p><div className="message-body">{selectedMessage.message}</div><div className="message-reader-actions"><a className="button button-dark message-respond" href="https://mail.hostinger.com/2/mailboxes/INBOX" target="_blank" rel="noreferrer">Respond in Hostinger Mail</a><button className="message-delete" disabled={busy} onClick={deleteMessage}>Delete message</button></div><p className="message-reply-hint">Find this enquiry using the reference in its email subject, then reply from your mailbox.</p></> : <p>Select a message to read it.</p>}</section></div><div className="pagination"><button disabled={page === 1} onClick={() => { setSelectedMessage(null); setPage(page - 1) }}>Previous</button><span>Page {page} · {meta.total} messages</span><button disabled={!meta.hasMore} onClick={() => { setSelectedMessage(null); setPage(page + 1) }}>Next</button></div></main></div>
 }
 function AdvisorMessageBadge({ token }) {
   const [count, setCount] = useState(0)

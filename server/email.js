@@ -12,6 +12,13 @@ async function mailTransporter() {
   return transporter
 }
 async function send({ email, subject, text, html }) { await (await mailTransporter()).sendMail({ from: process.env.EMAIL_FROM, to: email, subject, text, html }); return true }
+export function sendSupportMessageEmail({ id, name, email, topic, message }) {
+  const reference = id.replaceAll('-', '').slice(0, 8).toUpperCase()
+  const subject = `Student Advisor enquiry [${reference}] ${topic}`
+  const text = `New support message from ${name}\nEmail: ${email}\nTopic: ${topic}\nReference: ${reference}\n\n${message}`
+  const html = `<p><strong>New support message from ${escapeHtml(name)}</strong></p><p>Email: ${escapeHtml(email)}<br>Topic: ${escapeHtml(topic)}<br>Reference: ${reference}</p><hr><p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>`
+  return send({ email: process.env.SUPPORT_INBOX || 'info@student-advisor.co.uk', subject, text, html })
+}
 export function sendPasswordResetEmail({ email, resetUrl }) {
   return send({ email, subject: 'Reset your Student Advisor password', text: `Use this link within 15 minutes to reset your password: ${resetUrl}\n\nIf you did not request this, ignore this email.`, html: `<p>Use this link within 15 minutes to reset your password.</p><p><a href="${escapeHtml(resetUrl)}">Reset password</a></p><p>If you did not request this, ignore this email.</p>` })
 }
