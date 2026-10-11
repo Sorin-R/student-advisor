@@ -161,5 +161,5 @@ export function EditableImage({ field, label, className, fallback, overlay = '' 
 export function EditableInlineImage({ field, label, fallback, alt }) {
   const editor = useContext(EditorContext)
   const value = editor?.imageValue(field, fallback) ?? fallback
-  return <span className={editor?.mode ? 'site-editable site-editable-inline-image' : 'site-editable-inline-image'}><img src={value} alt={alt} />{editor?.mode && <button type="button" className="site-edit-button" onClick={event => { event.preventDefault(); event.stopPropagation(); editor.chooseImage(field, label, fallback) }}>Edit image</button>}</span>
+  return <span className={editor?.mode ? 'site-editable site-editable-inline-image' : 'site-editable-inline-image'}><img src={value} alt={alt} width="720" height="420" loading="lazy" decoding="async" />{editor?.mode && <button type="button" className="site-edit-button" onClick={event => { event.preventDefault(); event.stopPropagation(); editor.chooseImage(field, label, fallback) }}>Edit image</button>}</span>
 }

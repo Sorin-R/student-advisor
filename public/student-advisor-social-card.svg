@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">Student Advisor</title>
+  <desc id="description">Free guidance for UK university applications</desc>
+  <rect width="1200" height="630" fill="#121620"/>
+  <rect x="70" y="70" width="1060" height="490" rx="28" fill="#f15436"/>
+  <path d="M155 290c45-45 110-45 155 0v112c-45-29-110-29-155 0zm155 0c45-45 110-45 155 0v112c-45-29-110-29-155 0z" fill="#fff"/>
+  <text x="525" y="300" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="700">student</text>
+  <text x="525" y="390" fill="#121620" font-family="Arial,Helvetica,sans-serif" font-size="88" font-weight="700">advisor</text>
+  <text x="525" y="448" fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="28">UK UNIVERSITY GUIDANCE · ENGLISH &amp; ROMÂNĂ</text>
+</svg>

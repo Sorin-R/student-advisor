@@ -5,4 +5,21 @@ Disallow: /advisor/
 Disallow: /forgot-password
 Disallow: /reset-password/
 
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /advisor/
+Disallow: /forgot-password
+Disallow: /reset-password/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /advisor/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /advisor/
+
 Sitemap: https://student-advisor.co.uk/sitemap.xml

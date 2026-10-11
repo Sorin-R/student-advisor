@@ -1,10 +1,12 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { localeFromPath, localizedPath } from './locale-routes'
 
 const queryLanguage = new URLSearchParams(window.location.search).get('lang')
+const pathLanguage = localeFromPath(window.location.pathname)
 let storedLanguage
 try { storedLanguage = localStorage.getItem('student_advisor_language') } catch { /* Preferences are optional when browser storage is disabled. */ }
-const initialLanguage = ['en', 'ro'].includes(queryLanguage) ? queryLanguage : (['en', 'ro'].includes(storedLanguage) ? storedLanguage : 'en')
+const initialLanguage = pathLanguage || (['en', 'ro'].includes(queryLanguage) ? queryLanguage : (['en', 'ro'].includes(storedLanguage) ? storedLanguage : 'en'))
 
 i18n.use(initReactI18next).init({
   lng: initialLanguage,
@@ -33,6 +35,10 @@ export async function changeLanguage(language) {
   try { localStorage.setItem('student_advisor_language', language) } catch { /* Keep the selection for this visit. */ }
   document.documentElement.lang = language
   await i18n.changeLanguage(language)
+  const url = new URL(window.location.href)
+  url.searchParams.delete('lang')
+  const destination = localizedPath(url.pathname, language) + url.search + url.hash
+  if (destination !== url.pathname + url.search + url.hash) window.location.assign(destination)
 }
 
 export default i18n

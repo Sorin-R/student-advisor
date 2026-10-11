@@ -195,6 +195,66 @@
           }
         }
       ]
+    },
+    "student-visa-costs": {
+      "seo": {
+        "title": "UK Student Visa Cost 2026: Fee and Health Surcharge",
+        "description": "Check the 2026 UK Student visa application fee, Immigration Health Surcharge and the official sources to verify before applying."
+      },
+      "eyebrow": "Verified visa costs",
+      "title": "UK Student visa costs, with the figures clearly separated.",
+      "dek": "Visa charges can change, so this guide records the applicable figure, its effective date and the official source rather than presenting an undated estimate.",
+      "sections": [
+        {
+          "heading": "How much is the UK Student visa application fee in 2026?",
+          "answer": "From 8 April 2026, the Student visa application fee is £558 for the main applicant and each dependant when applying outside the UK.",
+          "paragraph": "The visa application charge is separate from tuition, the Immigration Health Surcharge and optional priority services. Confirm the live amount immediately before payment because the Home Office can revise fees.",
+          "source": {
+            "label": "Verify the Home Office fee table effective 8 April 2026",
+            "url": "https://www.gov.uk/government/publications/visa-regulations-revised-table/home-office-immigration-and-nationality-fees-8-april-2026"
+          }
+        },
+        {
+          "heading": "How much is the Immigration Health Surcharge for students?",
+          "answer": "The Immigration Health Surcharge is £776 per year for students, their dependants and Youth Mobility Scheme applicants.",
+          "paragraph": "The total is based on the visa length, which can extend beyond the course dates. Use the official calculator and application result rather than multiplying only the teaching years.",
+          "source": {
+            "label": "Check the current Immigration Health Surcharge rate",
+            "url": "https://www.gov.uk/healthcare-immigration-application/how-much-pay"
+          }
+        },
+        {
+          "heading": "What should you check before submitting a visa application?",
+          "answer": "Check the current fee, surcharge calculation, financial-evidence rules, Confirmation of Acceptance for Studies and the exact requirements for your circumstances.",
+          "paragraph": "Student Advisor provides application guidance, not immigration legal advice. Use GOV.UK and a properly regulated immigration adviser where your case requires individual immigration advice."
+        }
+      ]
+    },
+    "editorial-policy": {
+      "seo": {
+        "title": "Editorial and Corrections Policy | Student Advisor",
+        "description": "How Student Advisor researches, reviews, sources, updates and corrects guidance about UK university study and applications."
+      },
+      "eyebrow": "Our publishing standards",
+      "title": "How Student Advisor checks and updates its guidance.",
+      "dek": "We aim to make complex university information clear without replacing the official decision maker or presenting estimates as guarantees.",
+      "sections": [
+        {
+          "heading": "How is Student Advisor content researched?",
+          "answer": "Changing rules, fees and deadlines are checked against first-party sources such as GOV.UK, UCAS and the relevant university.",
+          "paragraph": "Each substantive guide identifies its review date and links to the sources readers should use for a final check. We distinguish official rules from planning examples and adviser observations."
+        },
+        {
+          "heading": "How do reviews and corrections work?",
+          "answer": "The Student Advisor editorial team reviews published guidance and corrects material errors when they are identified.",
+          "paragraph": "A correction should update the affected statement, its review date and the supporting source. Time-sensitive facts are not carried forward without a new verification."
+        },
+        {
+          "heading": "What are the limits of the guidance?",
+          "answer": "University, funding and immigration outcomes depend on the applicant and the responsible institution, so Student Advisor does not guarantee an offer, funding award or visa.",
+          "paragraph": "Case studies and student quotations are published only with permission and must not disclose private application information. Individual legal or immigration questions should be taken to an appropriately regulated professional."
+        }
+      ]
     }
   },
   "marketing": {

@@ -1,3 +1,5 @@
+import { stripLocale } from './locale-routes.js'
+
 // Content scopes are independent of credentials, language and navigation state.
 const hash = value => {
   let result = 2166136261
@@ -12,7 +14,7 @@ export function canManageContent(user) {
   return user?.role === 'admin' || (user?.role === 'moderator' && user.permissions?.manageContent === true)
 }
 export function contentPage(pathname, search = '', user = null) {
-  const path = pathname.replace(/\/+$/, '') || '/'
+  const path = stripLocale(pathname).replace(/\/+$/, '') || '/'
   const params = new URLSearchParams(search)
   if (path === '/') {
     if (params.has('auth')) return { key: 'sign-in', label: 'Student sign in', path: '/?auth=1' }
@@ -35,6 +37,8 @@ export const editorPages = [
   { key: 'free-student-advisory', path: '/free-student-advisory', label: 'Free Student Advisory' },
   { key: 'study-in-uk', path: '/study-in-uk', label: 'Study in the UK' },
   { key: 'university-admission', path: '/university-admission', label: 'University Admission' },
+  { key: 'student-visa-costs', path: '/student-visa-costs', label: 'Student visa costs' },
+  { key: 'editorial-policy', path: '/editorial-policy', label: 'Editorial policy' },
   { key: 'blog', path: '/blog', label: 'Blog' },
   { key: 'terms', path: '/terms', label: 'Terms and conditions' },
   { key: 'privacy', path: '/privacy', label: 'Privacy notice' },

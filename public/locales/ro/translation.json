@@ -195,6 +195,66 @@
           }
         }
       ]
+    },
+    "student-visa-costs": {
+      "seo": {
+        "title": "Cost viză de student UK 2026: taxă și IHS",
+        "description": "Verifică taxa pentru viza Student în 2026, suprataxa de sănătate și sursele oficiale pe care trebuie să le consulți înainte de aplicare."
+      },
+      "eyebrow": "Costuri de viză verificate",
+      "title": "Costurile vizei Student pentru UK, explicate separat.",
+      "dek": "Taxele se pot modifica, de aceea ghidul notează suma aplicabilă, data intrării în vigoare și sursa oficială, nu o estimare fără dată.",
+      "sections": [
+        {
+          "heading": "Cât costă cererea pentru viza Student în 2026?",
+          "answer": "Din 8 aprilie 2026, taxa pentru viza Student este de £558 pentru solicitantul principal și fiecare persoană aflată în întreținere atunci când cererea este depusă din afara Regatului Unit.",
+          "paragraph": "Taxa de viză este separată de costurile universitare, Immigration Health Surcharge și serviciile prioritare opționale. Confirmă suma chiar înainte de plată, deoarece Home Office poate modifica taxele.",
+          "source": {
+            "label": "Verifică tabelul Home Office valabil din 8 aprilie 2026",
+            "url": "https://www.gov.uk/government/publications/visa-regulations-revised-table/home-office-immigration-and-nationality-fees-8-april-2026"
+          }
+        },
+        {
+          "heading": "Cât este Immigration Health Surcharge pentru studenți?",
+          "answer": "Immigration Health Surcharge este de £776 pe an pentru studenți, persoanele aflate în întreținerea lor și solicitanții Youth Mobility Scheme.",
+          "paragraph": "Totalul depinde de durata vizei, care poate depăși perioada cursului. Folosește calculul oficial al cererii și nu înmulți doar anii de predare.",
+          "source": {
+            "label": "Verifică valoarea actuală a Immigration Health Surcharge",
+            "url": "https://www.gov.uk/healthcare-immigration-application/how-much-pay"
+          }
+        },
+        {
+          "heading": "Ce trebuie verificat înainte de depunerea cererii?",
+          "answer": "Verifică taxa actuală, calculul suprataxei, regulile privind fondurile, Confirmation of Acceptance for Studies și cerințele exacte pentru situația ta.",
+          "paragraph": "Student Advisor oferă îndrumare pentru aplicații, nu consultanță juridică de imigrare. Folosește GOV.UK și un consilier de imigrare reglementat atunci când situația necesită sfaturi individuale."
+        }
+      ]
+    },
+    "editorial-policy": {
+      "seo": {
+        "title": "Politica editorială și corecturi | Student Advisor",
+        "description": "Cum cercetează, verifică, citează, actualizează și corectează Student Advisor ghidurile despre studiile și aplicațiile universitare din UK."
+      },
+      "eyebrow": "Standardele noastre editoriale",
+      "title": "Cum verifică și actualizează Student Advisor informațiile.",
+      "dek": "Explicăm clar informații universitare complexe fără să înlocuim instituția care ia decizia și fără să prezentăm estimările drept garanții.",
+      "sections": [
+        {
+          "heading": "Cum este cercetat conținutul Student Advisor?",
+          "answer": "Regulile, taxele și termenele care se pot schimba sunt verificate în surse directe precum GOV.UK, UCAS și universitatea relevantă.",
+          "paragraph": "Fiecare ghid important indică data revizuirii și sursele pentru verificarea finală. Separăm regulile oficiale de exemplele de planificare și observațiile consilierilor."
+        },
+        {
+          "heading": "Cum funcționează revizuirile și corecturile?",
+          "answer": "Echipa editorială Student Advisor revizuiește ghidurile publicate și corectează erorile importante atunci când sunt identificate.",
+          "paragraph": "O corectură trebuie să actualizeze afirmația, data revizuirii și sursa. Informațiile sensibile la timp nu sunt păstrate fără o nouă verificare."
+        },
+        {
+          "heading": "Care sunt limitele îndrumării?",
+          "answer": "Rezultatele privind admiterea, finanțarea și imigrarea depind de candidat și de instituția responsabilă, astfel că Student Advisor nu garantează oferta, finanțarea sau viza.",
+          "paragraph": "Studiile de caz și citatele studenților sunt publicate numai cu acord și nu trebuie să dezvăluie date private. Întrebările juridice sau de imigrare trebuie adresate unui profesionist reglementat."
+        }
+      ]
     }
   },
   "marketing": {

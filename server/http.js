@@ -1,4 +1,6 @@
 import crypto from 'node:crypto'
+import fs from 'node:fs'
+import path from 'node:path'
 import express from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
@@ -75,14 +77,19 @@ export function installHttpMiddleware(app, { pool, frontendUrl, env = process.en
 }
 
 export function installBrowserRoutes(app, clientBuildDir) {
+  let seoManifest = {}
+  try { seoManifest = JSON.parse(fs.readFileSync(path.join(clientBuildDir, 'seo-manifest.json'), 'utf8')) } catch { /* Older builds fall back to the SPA shell. */ }
   app.use('/api', (_req, res) => res.status(404).json({ error: 'API endpoint not found' }))
   app.use(express.static(clientBuildDir, { dotfiles: 'deny', index: false, setHeaders(res, file) {
     res.set('Cache-Control', /\/assets\/[^/]+-[\w-]+\.[a-z]+$/.test(file) ? 'public, max-age=31536000, immutable' : 'no-cache')
   } }))
-  const browserRoute = /^\/(?:$|terms\/?$|privacy\/?$|advisor(?:\/.*)?$|admin(?:\/.*)?$|forgot-password\/?$|reset-password\/[^/]+\/?$|verify-email(?:\/[^/]+)?\/?$|free-student-advisory\/?$|study-in-uk\/?$|university-admission\/?$|blog(?:\/[^/]+)?\/?$|universities\/[^/]+\/?$)/
-  app.get(browserRoute, (_req, res) => {
-    res.set('Cache-Control', 'no-store')
-    res.sendFile('index.html', { root: clientBuildDir })
+  const browserRoute = /^\/(?:$|terms\/?$|privacy\/?$|advisor(?:\/.*)?$|admin(?:\/.*)?$|forgot-password\/?$|reset-password\/[^/]+\/?$|verify-email(?:\/[^/]+)?\/?$|(?:en|ro)(?:\/.*)?$|free-student-advisory\/?$|study-in-uk\/?$|university-admission\/?$|student-visa-costs\/?$|editorial-policy\/?$|blog(?:\/[^/]+)?\/?$|universities\/[^/]+\/?$)/
+  app.get(browserRoute, (req, res) => {
+    const key = req.path.length > 1 ? req.path.replace(/\/+$/, '') : req.path
+    const prerendered = seoManifest[key] || seoManifest[req.path]
+    if (!prerendered && (/^\/(?:admin|advisor|forgot-password|reset-password|verify-email)(?:\/|$)/.test(key) || (key === '/' && (req.query.apply || req.query.auth)))) res.set('X-Robots-Tag', 'noindex, nofollow')
+    res.set('Cache-Control', prerendered ? 'public, max-age=0, must-revalidate' : 'no-store')
+    res.sendFile(prerendered || 'index.html', { root: clientBuildDir })
   })
   app.use((_req, res) => res.status(404).type('text').send('Page not found'))
 }

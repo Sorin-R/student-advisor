@@ -69,6 +69,8 @@ test('browser routes work while unknown APIs and assets remain genuine 404s', as
       }
       for (const route of ['/api/unknown', '/assets/missing.js', '/unknown', '/.env']) assert.equal((await request(route)).status, 404, route)
       assert.match((await request('/assets/index-abcdef.js')).headers.get('cache-control'), /immutable/)
+      assert.match((await request('/admin')).headers.get('x-robots-tag'), /noindex/)
+      assert.match((await request('/?apply=1')).headers.get('x-robots-tag'), /noindex/)
     })
   } finally { await rm(directory, { recursive: true, force: true }) }
 })

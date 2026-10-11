@@ -1,3 +1,5 @@
+import { stripLocale } from './locale-routes.js'
+
 export const universities = [
   {
     name: 'ARU London',
@@ -90,6 +92,6 @@ export function universitySlug(name) {
 }
 
 export function universityFromPath(pathname) {
-  const match = pathname.match(/^\/universities\/([^/]+)\/?$/)
+  const match = stripLocale(pathname).match(/^\/universities\/([^/]+)\/?$/)
   return match ? universities.find((university) => universitySlug(university.name) === match[1]) || null : null
 }
