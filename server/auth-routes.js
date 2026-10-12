@@ -81,6 +81,8 @@ export function registerAuthRoutes(app, { pool, frontendUrl = process.env.FRONTE
     try { await email.verification({ email: user.email, verificationUrl: `${baseUrl}/verify-email/${token}` }) } catch { await audit(req, 'verification_email_delivery_failed', user.id) }
   }
   const loginOutcome = async (connection, user, res) => {
+    if (['advisor', 'moderator'].includes(user.role) && publicUser(user).permissions?.staffBlocked === true)
+      throw new AuthError('This staff account is temporarily blocked. Contact an administrator.', 403, 'ACCOUNT_BLOCKED')
     if (!user.email_verified) return { status: 202, body: { requiresEmailVerification: true, email: user.email, message: 'Verify your email before signing in. You can request another verification email below.' } }
     if (user.two_factor_enabled) return { status: 202, body: { requiresTwoFactor: true, challengeToken: await challenge(connection, user, 'login_mfa') } }
     if (staffRoles.has(user.role)) return { status: 202, body: { requiresMfaEnrollment: true, enrollmentToken: await challenge(connection, user, 'enroll_mfa', { lifetime: 600 }) } }
@@ -164,7 +166,16 @@ export function registerAuthRoutes(app, { pool, frontendUrl = process.env.FRONTE
       await userById(connection, hints[0].user_id, true)
       const [rows] = await connection.execute("SELECT * FROM auth_challenges WHERE token_hash = ? AND kind = 'email_verify' AND consumed_at IS NULL AND expires_at > UTC_TIMESTAMP() LIMIT 1 FOR UPDATE", [hashToken(token)])
       if (!rows[0]) throw new AuthError('This verification link is invalid or expired.', 400)
-      await connection.execute('UPDATE users SET email_verified = TRUE WHERE id = ?', [rows[0].user_id])
+      const verification = rows[0]
+      const payload = json(verification.payload)
+      if (payload.pendingEmail) {
+        const address = emailValue(payload.pendingEmail)
+        const user = await userById(connection, verification.user_id, true)
+        if (!user || emailValue(user.pending_email) !== address) throw new AuthError('This verification link is invalid or expired.', 400)
+        await connection.execute('UPDATE users SET email = ?, pending_email = NULL, email_verified = TRUE WHERE id = ?', [address, user.id])
+      } else {
+        await connection.execute('UPDATE users SET email_verified = TRUE WHERE id = ?', [verification.user_id])
+      }
       await consume(connection, rows[0].id); await revokeUserSessions(rows[0].user_id, connection)
       return rows[0].user_id
     })
@@ -268,6 +279,35 @@ export function registerAuthRoutes(app, { pool, frontendUrl = process.env.FRONTE
     } catch (error) { if (error instanceof AuthError) clearAuthCookies(res); throw error }
   }))
   app.get('/api/me', authRequired, route(async (req, res) => { res.json({ user: publicUser(req.authUser) }) }))
+  app.put('/api/me/profile', authRequired, route(async (req, res) => {
+    const address = emailValue(req.body?.email)
+    const phone = typeof req.body?.phone === 'string' ? req.body.phone.replace(/[\u0000-\u001F\u007F]/g, '').trim() : ''
+    if (!validEmail(address)) throw new AuthError('Enter a valid email address.', 400)
+    if (phone && (!/^\+?[\d\s().-]{6,32}$/.test(phone) || !/^\d{6,15}$/.test(phone.replace(/\D/g, '')))) throw new AuthError('Enter a valid mobile number or leave it blank.', 400)
+    const result = await authTransaction(pool, async connection => {
+      const user = await userById(connection, req.authUser.id, true)
+      if (!user || user.role !== 'student') throw new AuthError('Student account profile not found.', 404)
+      const changedEmail = emailValue(user.email) !== address
+      if (changedEmail) {
+        const [duplicates] = await connection.execute('SELECT id FROM users WHERE (email = ? OR pending_email = ?) AND id <> ? LIMIT 1', [address, address, user.id])
+        if (duplicates[0]) throw new AuthError('That email address is already connected to an account.', 409)
+      }
+      await connection.execute('UPDATE users SET profile_phone = ?, pending_email = ? WHERE id = ?', [phone || null, changedEmail ? address : user.pending_email || null, user.id])
+      if (changedEmail) {
+        await connection.execute("UPDATE auth_challenges SET consumed_at = UTC_TIMESTAMP() WHERE user_id = ? AND kind = 'email_verify' AND consumed_at IS NULL", [user.id])
+        const token = crypto.randomBytes(32).toString('hex')
+        await challenge(connection, user, 'email_verify', { rawToken: token, payload: { pendingEmail: address }, lifetime: 1800 })
+        return { user: { ...user, profile_phone: phone || null, pending_email: address }, verificationToken: token, changedEmail }
+      }
+      return { user: { ...user, profile_phone: phone || null, pending_email: user.pending_email || null }, verificationToken: null, changedEmail }
+    })
+    if (result.verificationToken) {
+      try { await email.verification({ email: address, verificationUrl: `${baseUrl}/verify-email/${result.verificationToken}` }) }
+      catch { await audit(req, 'verification_email_delivery_failed', result.user.id) }
+      await audit(req, 'account_email_change_requested', result.user.id)
+    }
+    res.json({ user: publicUser(result.user), emailVerificationRequired: result.changedEmail, message: result.changedEmail ? 'Check the new email address and verify it before it becomes your sign-in email.' : 'Profile updated.' })
+  }))
   app.post('/api/auth/logout', route(async (req, res) => {
     const targets = new Map()
     try {

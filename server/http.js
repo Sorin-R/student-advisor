@@ -71,9 +71,9 @@ export function installHttpMiddleware(app, { pool, frontendUrl, env = process.en
   for (const route of ['/api/auth/forgot-password', '/api/auth/reset-password', '/api/auth/resend-verification', '/api/auth/verification/resend']) app.use(route, limiter('recovery', 5, 15))
   app.use('/api/2fa', limiter('mfa', 20, 15))
   app.post('/api/support-messages', limiter('support', 5, 15))
-  app.patch('/api/application/documents', limiter('upload', 12, 15))
+  app.patch('/api/applications/:id/documents', limiter('upload', 12, 15))
   const json = express.json({ limit: '64kb', strict: true })
-  app.use((req, res, next) => req.method === 'PATCH' && req.path === '/api/application/documents' ? next() : json(req, res, next))
+  app.use((req, res, next) => req.method === 'PATCH' && /^\/api\/applications\/[^/]+\/documents$/.test(req.path) ? next() : json(req, res, next))
 }
 
 export function installBrowserRoutes(app, clientBuildDir) {

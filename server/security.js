@@ -198,11 +198,17 @@ export function publicUser(user) {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
+        phone: user.profile_phone || '',
+        pendingEmail: user.pending_email || '',
         role: user.role || 'student',
         permissions,
         twoFactorEnabled: Boolean(user.two_factor_enabled),
         emailVerified: Boolean(user.email_verified),
     };
+}
+function staffAccountBlocked(user) {
+    if (!['advisor', 'moderator'].includes(user?.role)) return false;
+    return publicUser(user).permissions?.staffBlocked === true;
 }
 export async function issueSession(
     res,
@@ -214,6 +220,12 @@ export async function issueSession(
         expiresAt = new Date(Date.now() + SESSION_SECONDS * 1000),
     } = {},
 ) {
+    if (staffAccountBlocked(user))
+        throw new AuthError(
+            'This staff account is temporarily blocked. Contact an administrator.',
+            403,
+            'ACCOUNT_BLOCKED',
+        );
     if (
         !user.email_verified ||
         (['admin', 'advisor', 'moderator'].includes(user.role) &&
@@ -267,6 +279,7 @@ export async function authenticateRequest(req) {
     const user = rows[0];
     if (
         !user ||
+        staffAccountBlocked(user) ||
         (['admin', 'advisor', 'moderator'].includes(user.role) &&
             !user.two_factor_enabled)
     )
@@ -306,24 +319,23 @@ function staffAccess(check, message) {
         });
 }
 export const adminRequired = staffAccess(
-    user => user.role === 'admin',
-    'Admin access required',
+    user => user.role === 'admin' || (user.role === 'moderator' && user.permissions?.adminPermissions === true),
+    'Admin permissions required',
 );
 export const staffRequired = (permission = 'viewOnly') =>
     staffAccess(
         user =>
             user.role === 'admin' ||
             (user.role === 'moderator' &&
-                user.permissions?.[permission] === true),
+                (user.permissions?.adminPermissions === true || user.permissions?.[permission] === true)),
         'Staff access has not been granted',
     );
 export const advisorRequired = (permission = 'advisorDashboard') =>
     staffAccess(
         user =>
-            user.role === 'advisor' ||
+            user.role === 'admin' || user.role === 'advisor' ||
             (user.role === 'moderator' &&
-                user.permissions?.advisorDashboard === true &&
-                user.permissions?.[permission] === true),
+                (user.permissions?.adminPermissions === true || (user.permissions?.advisorDashboard === true && user.permissions?.[permission] === true))),
         'Adviser access has not been granted',
     );
 export async function revokeUserSessions(userId, connection = database) {

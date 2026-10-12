@@ -8,7 +8,7 @@ import { authRequired, advisorRequired } from './security.js'
 import { DOCUMENT_KEYS, REQUIRED_APPLICATION_FIELDS, TERMS_VERSION, applicationProgress, sanitizeApplicationData, validateApplicationData } from '../shared/application-schema.js'
 import { MAX_DOCUMENT_BYTES, decodeDocument, safeDocumentName, validateDocument } from './document-validation.js'
 
-const fail = (status, message) => Object.assign(new Error(message), { status })
+const fail = (status, message, code) => Object.assign(new Error(message), { status, ...(code ? { code } : {}) })
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 const text = (value, max = 255) => typeof value === 'string' ? value.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, max) : ''
 function object(value) { if (typeof value === 'string') { try { value = JSON.parse(value) } catch { return {} } } return isRecord(value) ? value : {} }
@@ -80,7 +80,7 @@ export function registerApplicationRoutes(app, options = {}) {
   const uploadsDir = options.uploadsDir || path.resolve('./uploads')
   const route = (handler) => async (req, res, next) => {
     try { await handler(req, res) } catch (error) {
-      if ([400, 403, 404, 409, 413, 415, 422, 428, 503].includes(error.status)) return res.status(error.status).json({ error: error.message })
+      if ([400, 403, 404, 409, 413, 415, 422, 428, 503].includes(error.status)) return res.status(error.status).json({ error: error.message, ...(error.code ? { code: error.code } : {}) })
       next(error)
     }
   }
@@ -112,6 +112,19 @@ export function registerApplicationRoutes(app, options = {}) {
     const [rows] = await connection.execute(`${selectApplication} WHERE a.${byId ? 'id' : 'user_id'} = ? LIMIT 1`, [value])
     return rows[0] || null
   }
+  async function findStudentApplication(connection, id, userId, lock = false) {
+    if (lock) await connection.execute('SELECT id FROM applications WHERE id = ? AND user_id = ? FOR UPDATE', [id, userId])
+    const [rows] = await connection.execute(`${selectApplication} WHERE a.id = ? AND a.user_id = ? LIMIT 1`, [id, userId])
+    return rows[0] || null
+  }
+  async function assertUniversityAvailable(connection, userId, applicationId, university) {
+    const normalize = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-GB')
+    const selected = normalize(university)
+    if (!selected) return
+    const [rows] = await connection.execute('SELECT id, data FROM applications WHERE user_id = ? AND id <> ? FOR UPDATE', [userId, applicationId])
+    const duplicate = rows.some(row => normalize(object(row.data).university) === selected)
+    if (duplicate) throw fail(409, 'You already have an application for this university. Continue that application or choose a different university.', 'UNIVERSITY_ALREADY_APPLIED')
+  }
   async function snapshot(connection, row) {
     if (!row) return { id: null, data: null, requestedDocuments: [], documentSubmissions: {}, status: 'draft', version: 0, termsVersion: null, termsAcceptedAt: null }
     const [stored] = await connection.execute('SELECT document_key AS documentKey FROM application_document_files WHERE application_id = ?', [row.id])
@@ -133,17 +146,19 @@ export function registerApplicationRoutes(app, options = {}) {
       email: text(row.email), firstName: text(row.firstName, 100), lastName: text(row.lastName, 100),
     }
   }
-  async function change(req, byId, operation) {
+  async function change(req, byId, operation, studentApplicationId = null) {
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
-      if (!byId) {
+      if (!byId || studentApplicationId) {
         // Serialize creation too, where there is not yet an application row to lock.
         const [users] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [req.user.sub])
         if (!users[0]) throw fail(403, 'Your account is unavailable.')
       }
-      const row = await find(connection, byId ? req.params.id : req.user.sub, byId, true)
-      if (byId && !row) throw fail(404, 'Application not found.')
+      const row = studentApplicationId
+        ? await findStudentApplication(connection, studentApplicationId, req.user.sub, true)
+        : await find(connection, byId ? req.params.id : req.user.sub, byId, true)
+      if ((byId || studentApplicationId) && !row) throw fail(404, 'Application not found.')
       assertVersion(row, req.body?.version)
       const result = await operation(connection, row)
       await connection.commit()
@@ -154,6 +169,81 @@ export function registerApplicationRoutes(app, options = {}) {
   function writable(row) { if (!row) throw fail(404, 'Application not found.'); if (row.status === 'complete') throw fail(409, 'This application is locked. Ask your adviser to reopen it.') }
 
   app.get('/api/application', authenticate, readLimit, route(async (req, res) => res.json(await snapshot(pool, await find(pool, req.user.sub)))))
+  app.get('/api/applications', authenticate, readLimit, route(async (req, res) => {
+    const [rows] = await pool.execute(`${selectApplication} WHERE a.user_id = ? ORDER BY a.updated_at DESC, a.id DESC`, [req.user.sub])
+    res.json({ applications: await Promise.all(rows.map(row => snapshot(pool, row))) })
+  }))
+  app.post('/api/applications', authenticate, writes, route(async (req, res) => {
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      const [users] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [req.user.sub])
+      if (!users[0]) throw fail(403, 'Your account is unavailable.')
+      const [counts] = await connection.execute("SELECT SUM(status = 'draft') AS drafts, SUM(status <> 'draft') AS submitted FROM applications WHERE user_id = ?", [req.user.sub])
+      if (Number(counts[0]?.drafts || 0) >= 10) throw fail(409, 'You can save up to 10 draft applications. Delete a saved application before creating another.')
+      const id = crypto.randomUUID()
+      await connection.execute("INSERT INTO applications (id, user_id, data, status, version) VALUES (?, ?, '{}', 'draft', 1)", [id, req.user.sub])
+      await audit(connection, req, 'student_create_application', id)
+      const created = await findStudentApplication(connection, id, req.user.sub)
+      await connection.commit()
+      res.status(201).json(await snapshot(pool, created))
+    } catch (error) { await connection.rollback(); throw error } finally { connection.release() }
+  }))
+  app.get('/api/applications/:id', authenticate, readLimit, route(async (req, res) => {
+    const row = await findStudentApplication(pool, req.params.id, req.user.sub)
+    if (!row) throw fail(404, 'Application not found.')
+    res.json(await snapshot(pool, row))
+  }))
+  app.put('/api/applications/:id', authenticate, writes, route(async (req, res) => {
+    const requestedStatus = req.body?.status
+    studentStatus(null, requestedStatus)
+    const checked = validateApplicationData(req.body?.data, { submitted: requestedStatus === 'submitted' })
+    if (checked.errors.length) throw fail(400, checked.errors.slice(0, 8).join(' '))
+    if (requestedStatus === 'submitted' && req.body?.termsVersion !== TERMS_VERSION) throw fail(400, 'Read and accept the current Terms & Conditions before submitting.')
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      const [users] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [req.user.sub])
+      if (!users[0]) throw fail(403, 'Your account is unavailable.')
+      const row = await findStudentApplication(connection, req.params.id, req.user.sub, true)
+      if (!row) throw fail(404, 'Application not found.')
+      assertVersion(row, req.body?.version)
+      await assertUniversityAvailable(connection, req.user.sub, row.id, checked.data.university)
+      const status = studentStatus(row.status, requestedStatus)
+      if (status !== 'draft') {
+        const [counts] = await connection.execute("SELECT COUNT(*) AS total FROM applications WHERE user_id = ? AND status <> 'draft'", [req.user.sub])
+        if (row.status === 'draft' && Number(counts[0]?.total || 0) >= 3) throw fail(409, 'You can submit up to 3 applications.')
+        const current = validateApplicationData(checked.data, { submitted: true })
+        if (current.errors.length) throw fail(400, current.errors.slice(0, 8).join(' '))
+      }
+      const data = { ...checked.data }
+      const submissions = cleanSubmissions(row.documentSubmissions, row.id)
+      for (const key of DOCUMENT_KEYS) { delete data[key]; if (submissions[key]?.fileName) data[key] = submissions[key].fileName }
+      await connection.execute('UPDATE applications SET data = ?, status = ?, version = version + 1, terms_version = ?, terms_accepted_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+        [JSON.stringify(data), status, requestedStatus === 'submitted' ? TERMS_VERSION : row.termsVersion, requestedStatus === 'submitted' ? new Date() : row.termsAcceptedAt, row.id, req.user.sub])
+      await audit(connection, req, requestedStatus === 'submitted' ? 'student_submit_application' : 'student_save_application', row.id, { status })
+      const updatedRow = await findStudentApplication(connection, row.id, req.user.sub)
+      await connection.commit()
+      res.json({ saved: true, ...await snapshot(pool, updatedRow) })
+    } catch (error) { await connection.rollback(); throw error } finally { connection.release() }
+  }))
+  app.delete('/api/applications/:id', authenticate, writes, route(async (req, res) => {
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      const [users] = await connection.execute('SELECT id FROM users WHERE id = ? FOR UPDATE', [req.user.sub])
+      if (!users[0]) throw fail(403, 'Your account is unavailable.')
+      const row = await findStudentApplication(connection, req.params.id, req.user.sub, true)
+      if (!row) throw fail(404, 'Application not found.')
+      assertVersion(row, req.body?.version)
+      if (row.status === 'complete') throw fail(409, 'This application is locked. Ask your adviser to reopen it.')
+      await audit(connection, req, 'student_delete_application', row.id)
+      await connection.execute('DELETE FROM applications WHERE id = ? AND user_id = ?', [row.id, req.user.sub])
+      await connection.commit()
+      try { await cleanupLegacyApplication(uploadsDir, row.id) } catch (error) { console.warn('Legacy application cleanup requires operator attention:', error.code || 'unknown') }
+      res.status(204).end()
+    } catch (error) { await connection.rollback(); throw error } finally { connection.release() }
+  }))
   app.put('/api/application', authenticate, writes, route(async (req, res) => {
     const requestedStatus = req.body?.status
     // Do not accept staff-owned states even on record creation.
@@ -173,6 +263,7 @@ export function registerApplicationRoutes(app, options = {}) {
       const submissions = cleanSubmissions(row?.documentSubmissions, row?.id)
       for (const key of DOCUMENT_KEYS) { delete data[key]; if (submissions[key]?.fileName) data[key] = submissions[key].fileName }
       const id = row?.id || crypto.randomUUID()
+      await assertUniversityAvailable(connection, req.user.sub, id, data.university)
       if (row) {
         await connection.execute('UPDATE applications SET data = ?, status = ?, version = version + 1, terms_version = ?, terms_accepted_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           [JSON.stringify(data), status, submitted ? TERMS_VERSION : row.termsVersion, submitted ? new Date() : row.termsAcceptedAt, id])
@@ -186,10 +277,10 @@ export function registerApplicationRoutes(app, options = {}) {
     res.json({ saved: true, ...result })
   }))
 
-  app.patch('/api/application/documents', authenticate, uploadLimit, documentCapacity, uploadJson, route(async (req, res) => {
+  app.patch('/api/applications/:id/documents', authenticate, uploadLimit, documentCapacity, uploadJson, route(async (req, res) => {
     const incoming = req.body?.documents
     if (!isRecord(incoming) || !Object.keys(incoming).length || Object.keys(incoming).some((key) => !DOCUMENT_KEYS.includes(key))) throw fail(400, 'Select requested document files to upload.')
-    const current = await find(pool, req.user.sub)
+    const current = await findStudentApplication(pool, req.params.id, req.user.sub)
     writable(current); assertVersion(current, req.body?.version)
     function checkFiles(row) {
       const requested = documentKeys(row.requestedDocuments)
@@ -218,7 +309,7 @@ export function registerApplicationRoutes(app, options = {}) {
       await connection.execute('UPDATE applications SET data = ?, document_submissions = ?, version = version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [JSON.stringify(data), JSON.stringify(submissions), row.id])
       await audit(connection, req, 'student_upload_documents', row.id, { documents: prepared.map((file) => file.key) })
       return updated(connection, row)
-    })
+    }, req.params.id)
     res.json({ sent: true, ...result })
   }))
 

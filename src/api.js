@@ -1,4 +1,5 @@
 // Authentication is held in memory. The HttpOnly cookie is used only for renewal.
+import { trackRequestOutcome } from './analytics.js'
 let session = { accessToken: '', user: null, ready: false }
 let renewal = null
 let signingOut = null
@@ -104,6 +105,7 @@ export async function apiFetch(url, options = {}) {
       if (session.accessToken && session.accessToken !== requestedToken) response = await request()
       else if ((await refreshSession())?.accessToken) response = await request()
     }
+    try { trackRequestOutcome(url, String(requestOptions.method || 'GET').toUpperCase(), typeof requestOptions.body === 'string' ? JSON.parse(requestOptions.body) : null, response.ok) } catch { /* Metrics must never interrupt an application request. */ }
     return response
   } catch (error) { if (error.code === 'ACCOUNT_CHANGED') throw error; throw new Error('Unable to connect. Check your connection and try again.', { cause: error }) }
 }

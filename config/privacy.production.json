@@ -1,6 +1,6 @@
 {
   "approved": true,
-  "updated": "2026-10-10",
+  "updated": "2026-10-12",
   "controller": "Terra Connect Ltd, trading as Student Advisor. Contact: Sorin Rotaru, 57 Tonbridge Drive, Basildon, SS15 6ND, United Kingdom",
   "contactEmail": "info@student-advisor.co.uk",
   "sections": [
@@ -30,7 +30,7 @@
     },
     {
       "title": "Cookies and external services",
-      "body": "Student Advisor uses essential cookies for secure sign-in, session renewal, multi-factor authentication and Google sign-in state. These cookies are necessary for account features and are not used for advertising. The site may save a language preference on your device. If you choose Google sign-in or use an address feature powered by Google Maps, your browser communicates with Google under Google's own privacy terms. We will update this notice and obtain any required consent before introducing non-essential tracking."
+      "body": "Student Advisor uses essential cookies for secure sign-in, session renewal, multi-factor authentication and Google sign-in state. These cookies are necessary for account features and are not used for advertising. The site may save a language preference on your device. If you choose Google sign-in or use an address feature powered by Google Maps, your browser communicates with Google under Google's own privacy terms. Optional analytics run only if you select Allow analytics in Privacy choices. If enabled, we record pages and sections viewed, time spent, visible button and link labels, keywords entered in the Find your next step university and course finder, and whether selected website actions succeed or fail. Analytics uses random browser and visit identifiers; it does not record form contents, names, email addresses, uploaded documents or advertising identifiers. Traffic from admin and adviser dashboards is excluded. Events are retained for up to 90 days. You can change or withdraw this choice at any time using Privacy choices."
     },
     {
       "title": "Security and contact",

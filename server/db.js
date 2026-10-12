@@ -36,6 +36,8 @@ export async function initDb(databasePool = pool) {
       permissions JSON NULL,
       first_name VARCHAR(100) NULL,
       last_name VARCHAR(100) NULL,
+      profile_phone VARCHAR(32) NULL,
+      pending_email VARCHAR(255) NULL UNIQUE,
       two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
       two_factor_secret_enc TEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -80,7 +82,9 @@ export async function initDb(databasePool = pool) {
       topic VARCHAR(100) NOT NULL,
       message TEXT NOT NULL,
       read_at TIMESTAMP NULL,
+      student_read_at TIMESTAMP NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       CONSTRAINT support_message_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB`,
     `CREATE TABLE IF NOT EXISTS password_reset_tokens (

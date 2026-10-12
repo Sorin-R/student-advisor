@@ -43,14 +43,107 @@
     background: transparent;
 }
 .account-application-nav {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 2px 4px;
     margin-top: 22px;
     margin-bottom: 14px;
     padding-bottom: 0;
     border-bottom: 0;
 }
+.account-application-nav button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 4px;
+    gap: 4px;
+}
+.account-application-nav button:nth-child(3) {
+    grid-column: 2;
+    grid-template-columns: minmax(0, 1fr);
+}
 .account-application-nav button.active {
     text-decoration: underline;
     text-underline-offset: 4px;
+}
+.application-count {
+    margin-left: 0;
+    color: var(--lime);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+.student-profile-card {
+    max-width: 720px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    background: var(--surface, #fff);
+}
+.student-profile-card > p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 13px;
+}
+.student-profile-card {
+    display: grid;
+    gap: 18px;
+}
+.student-profile-card label,
+.student-profile-readonly {
+    display: grid;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.student-profile-card input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    color: var(--ink);
+    background: var(--surface, #fff);
+    font: inherit;
+    font-size: 14px;
+}
+.student-profile-readonly strong {
+    color: var(--ink);
+    font-weight: 600;
+}
+.student-profile-notices {
+    display: grid;
+    gap: 10px;
+    max-width: 720px;
+    margin-top: 22px;
+}
+.student-profile-notices:empty {
+    display: none;
+}
+.student-profile-notice {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--orange);
+    background: var(--surface, #fff);
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+    cursor: pointer;
+}
+.student-profile-notice:hover {
+    background: #f7f5ef;
+}
+.student-profile-notice span {
+    flex: 0 0 auto;
+    color: var(--orange);
+    font-size: 18px;
 }
 .section-nav button .section-nav-check {
     display: inline-block;
@@ -115,6 +208,74 @@
     gap: 20px;
     border-left: 4px solid var(--orange);
 }
+.application-list-card-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.application-progress {
+    max-width: 680px;
+    margin: 18px 0 0;
+}
+.application-progress-track {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e9e7e1;
+}
+.application-progress-track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--lime);
+    transition: width 180ms ease;
+}
+.application-progress ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 9px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.application-progress li {
+    color: #89867f;
+    font-size: 10px;
+    line-height: 1.35;
+}
+.application-progress li:nth-child(2) {
+    text-align: center;
+}
+.application-progress li:last-child {
+    text-align: right;
+}
+.application-progress li.current {
+    color: var(--ink);
+    font-weight: 700;
+}
+.requested-upload-prompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 0;
+    border: 0;
+    color: #a63220;
+    background: transparent;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+.requested-upload-prompt span {
+    color: inherit !important;
+    font-size: 15px !important;
+}
+.requested-upload-prompt:hover,
+.requested-upload-prompt:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
 .application-list-card p {
     font-size: 10px;
     text-transform: uppercase;
@@ -156,6 +317,22 @@
     display: grid;
     justify-items: end;
     gap: 18px;
+}
+@media (max-width: 600px) {
+    .application-list-card {
+        flex-direction: column;
+        padding: 20px;
+    }
+    .application-card-actions {
+        width: 100%;
+        justify-items: stretch;
+    }
+    .application-card-actions .button {
+        width: 100%;
+    }
+    .application-progress li {
+        font-size: 9px;
+    }
 }
 .delete-application {
     font-size: 10px;
@@ -1001,10 +1178,134 @@
     padding: 0 5px;
     margin: 0 5px;
     border-radius: 999px;
-    background: #fff;
-    color: var(--orange);
+    background: #c83232;
+    color: #fff;
     font-size: 10px;
     font-weight: 800;
+}
+.unread-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    color: #fff;
+    background: #c83232;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.dashboard-page .advisor-help {
+    display: block;
+}
+.advisor-help .unread-count {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.conversation-thread {
+    display: grid;
+    gap: 12px;
+    max-height: 52vh;
+    overflow-y: auto;
+    margin-top: 20px;
+    padding: 2px 4px 4px 0;
+}
+.conversation-message {
+    max-width: min(88%, 640px);
+    padding: 14px 16px;
+    background: #f3f1eb;
+    border-left: 3px solid #bbb8b0;
+}
+.conversation-message.from-student {
+    justify-self: start;
+    border-left-color: var(--orange);
+}
+.conversation-message.from-adviser {
+    justify-self: end;
+    background: #f1f6d5;
+    border-left: 0;
+    border-right: 3px solid var(--lime);
+}
+.conversation-message > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    color: #77736c;
+    font-size: 10px;
+}
+.conversation-message > div strong {
+    color: var(--ink);
+    font-size: 11px;
+}
+.conversation-message time {
+    white-space: nowrap;
+}
+.conversation-message p {
+    margin: 8px 0 0;
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.conversation-composer {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+.conversation-composer label {
+    color: #77736c;
+    font-size: 11px;
+    font-weight: 700;
+}
+.conversation-composer textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    resize: vertical;
+    color: var(--ink);
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+}
+.conversation-composer .button {
+    justify-self: end;
+}
+.student-messages-page .adviser-heading {
+    justify-content: space-between;
+    gap: 40px;
+}
+.student-messages-page .adviser-heading h1 {
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: 0.86;
+    letter-spacing: -4px;
+    margin: 0;
+    white-space: nowrap;
+}
+.student-messages-page .adviser-heading .eyebrow {
+    margin: 0;
+    color: var(--orange);
+    letter-spacing: 0.18em;
+}
+.student-messages-page .adviser-heading > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+}
+.student-messages-page .message-row small {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: anywhere;
 }
 .messages-page {
     max-width: 1180px;
@@ -1030,10 +1331,23 @@
     color: var(--orange);
     letter-spacing: 0.18em;
 }
+.messages-page.student-messages-page .adviser-heading h1 {
+    font-size: clamp(40px, 6vw, 68px);
+    white-space: nowrap;
+}
+.messages-page.student-messages-page .adviser-heading .eyebrow {
+    margin: 0;
+}
+.messages-page.student-messages-page .adviser-heading > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+}
 .messages-page .messages-layout {
     margin-top: 0;
     grid-template-columns: minmax(320px, 460px) 1fr;
-    gap: 22px;
+    gap: 28px;
 }
 .messages-page .messages-list {
     box-shadow: 0 10px 30px rgba(20, 24, 32, 0.05);
@@ -1041,6 +1355,46 @@
 .messages-page .message-reader {
     box-shadow: 0 10px 30px rgba(20, 24, 32, 0.05);
     background: #fff;
+}
+.student-messages-page .adviser-heading {
+    padding-bottom: 42px;
+    margin-bottom: 34px;
+}
+.student-new-message h2 {
+    margin-bottom: 10px;
+}
+.student-new-message-intro,
+.student-message-empty-state p {
+    color: #77736c;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.student-new-message .conversation-composer {
+    margin-top: 26px;
+    padding-top: 24px;
+}
+.student-new-message .conversation-composer input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+}
+.student-new-message .conversation-composer textarea {
+    min-height: 160px;
+}
+.student-new-message-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+.student-message-empty-state p + p {
+    margin-top: 8px;
 }
 @media (max-width: 760px) {
     .message-filters {
@@ -1051,7 +1405,15 @@
     }
     .messages-page .messages-layout {
         grid-template-columns: 1fr;
+        gap: 20px;
     }
+    .student-messages-page .adviser-heading { gap: 18px; padding-bottom: 28px; margin-bottom: 24px; }
+    .student-messages-page .adviser-heading h1 { font-size: clamp(34px, 10vw, 58px); letter-spacing: -2.5px; }
+}
+.student-messages-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
 }
 .messages-summary {
     display: flex;
@@ -1119,4 +1481,15 @@
         top: 84px;
         right: 20px;
     }
+}
+
+.portal-form-grid {
+    align-items: start;
+}
+.field-help {
+    margin: 10px 0 0;
+    color: #77746e;
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.45;
 }

@@ -32,7 +32,11 @@ export function sanitizeApplicationData(value) {
   if (!record(value)) return {}
   const data = {}
   for (const [key, length] of Object.entries(APPLICATION_FIELDS)) {
-    if (typeof value[key] === 'string') data[key] = value[key].replace(CONTROL_CHARACTERS, '').trim().slice(0, length)
+    if (typeof value[key] === 'string') {
+      let fieldValue = value[key].replace(CONTROL_CHARACTERS, '').trim().slice(0, length)
+      if (key === 'firstName' || key === 'lastName') fieldValue = fieldValue.replace(/^(\s*)(\p{L})/u, (_match, whitespace, letter) => `${whitespace}${letter.toLocaleUpperCase()}`)
+      data[key] = fieldValue
+    }
   }
   if (typeof value.termsAccepted === 'boolean') data.termsAccepted = value.termsAccepted
   return data

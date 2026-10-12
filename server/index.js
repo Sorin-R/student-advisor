@@ -17,6 +17,8 @@ import { loadPrivacyNotice } from './privacy.js'
 import { checkProductionConfig } from './config-check.js'
 import { assertAuthSchema } from './auth-migrations.js'
 import { assertHardeningSchema } from './hardening-migrations.js'
+import { assertSupportSchema } from './support-migrations.js'
+import { registerAnalyticsRoutes } from './analytics-routes.js'
 
 export async function createApp({ dbPool = pool, env = process.env, authOptions = {}, httpOptions = {}, applicationOptions = {}, serveClient = env.NODE_ENV === 'production' } = {}) {
   const app = express()
@@ -32,6 +34,7 @@ export async function createApp({ dbPool = pool, env = process.env, authOptions 
   registerSupportRoutes(app, { pool: dbPool, logAuditAction })
   registerApplicationRoutes(app, { pool: dbPool, uploadsDir, buildApplicationPdf, readLegacyUploadedFile: createLegacyReader(uploadsDir), ...applicationOptions })
   registerAdminRoutes(app, { pool: dbPool, logAuditAction })
+  registerAnalyticsRoutes(app, { pool: dbPool })
   registerContentRoutes(app, { pool: dbPool, uploadsDir, logAuditAction })
   if (serveClient) installBrowserRoutes(app, clientBuildDir)
   else app.use((_req, res) => res.status(404).json({ error: 'Endpoint not found' }))
@@ -46,6 +49,7 @@ export async function startServer() {
     if (configuration.errors.length) throw new Error(`Deployment configuration is incomplete: ${configuration.errors.join(' ')}`)
     await assertAuthSchema(pool)
     await assertHardeningSchema(pool)
+    await assertSupportSchema(pool)
   } else {
     const { migrateDatabase } = await import('./migrate.js')
     await migrateDatabase()

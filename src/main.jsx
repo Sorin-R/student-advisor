@@ -8,6 +8,7 @@ import './portal.css'
 import './frontend-overrides.css'
 import './content.css'
 import './theme.css'
+import './analytics.css'
 import ThemeToggle, { ThemeProvider } from './ThemeToggle'
 import { loadTranslations } from './i18n'
 import { EditorialPage, HomeFaq, LanguageSwitcher } from './PublicContent'
@@ -19,6 +20,8 @@ const AdminDashboard = lazy(() => import('./AdminDashboard'))
 import AccountSecurity, { SignInPanel, useSession, useSessionBootstrap } from './AccountSecurity'
 import { api, apiFetch as fetch, getSession, logout, refreshSession } from './api'
 import PrivacyPage from './PrivacyPage'
+import AnalyticsConsent, { AnalyticsTracker } from './Analytics'
+import { analyticsConsent, trackCourseSearch } from './analytics.js'
 import { selectedDocumentUploads } from './application-client'
 import { TERMS_VERSION, REQUIRED_APPLICATION_FIELDS, validateApplicationData, applicationProgress as calculateApplicationProgress } from '../shared/application-schema'
 import { universities, universityFromPath, universitySlug } from './universities'
@@ -50,7 +53,8 @@ function currentApplicationStage(date = new Date(), language = 'en') {
   return `${seasons.summer} ${year}`
 }
 function userDisplayName(user) {
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim()
+  const capitalizeInitial = value => String(value || '').replace(/^(\s*)(\p{L})/u, (_match, whitespace, letter) => `${whitespace}${letter.toLocaleUpperCase()}`)
+  const name = [capitalizeInitial(user?.firstName), capitalizeInitial(user?.lastName)].filter(Boolean).join(' ').trim()
   return name || user?.email || 'Student'
 }
 
@@ -109,7 +113,7 @@ function AccessibleDialog({ title, onClose, children }) {
   return <div className="modal-backdrop" onClick={event => { if (event.target === event.currentTarget) onClose() }}><div ref={dialog} className="modal" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>{children}</div></div>
 }
 
-function SupportModal({ user, onClose }) {
+function SupportModal({ user, onClose, onSent }) {
   const { i18n } = useTranslation()
   const ro = i18n.resolvedLanguage?.startsWith('ro')
   const copy = ro ? {
@@ -125,15 +129,95 @@ function SupportModal({ user, onClose }) {
   }
   const [messageForm, setMessageForm] = useState({ name: [user?.firstName, user?.lastName].filter(Boolean).join(' '), email: user?.email || '', topic: '', message: '' })
   const [status, setStatus] = useState('')
-  const submit = async event => { event.preventDefault(); if (status === 'sending') return; setStatus('sending'); try { await api('/api/support-messages', { method: 'POST', body: messageForm }); setStatus('sent') } catch (error) { setStatus(error.message) } }
+  const submit = async event => { event.preventDefault(); if (status === 'sending') return; setStatus('sending'); try { const result = await api('/api/support-messages', { method: 'POST', body: messageForm }); setStatus('sent'); onSent?.(result.id) } catch (error) { setStatus(error.message) } }
   const updateMessage = (key, value) => setMessageForm((current) => ({ ...current, [key]: value }))
-  return <AccessibleDialog title={copy.title} onClose={onClose}><button className="close" aria-label={copy.close} onClick={onClose}>×</button><p className="eyebrow">{copy.eyebrow}</p><h2>{copy.title}</h2><p className="modal-intro">{copy.intro}</p>{status === 'sent' ? <div className="success"><div className="success-icon">✓</div><p>{copy.sent}</p><button className="button button-dark" onClick={onClose}>{copy.close}</button></div> : <form onSubmit={submit}><label>{copy.name}<input required value={messageForm.name} onChange={(event) => updateMessage('name', event.target.value)} placeholder={copy.namePlaceholder} /></label><label>{copy.email}<input required type="email" value={messageForm.email} onChange={(event) => updateMessage('email', event.target.value)} placeholder="you@example.com" /></label><label>{copy.topic}<select required value={messageForm.topic} onChange={(event) => updateMessage('topic', event.target.value)}><option value="">{copy.select}</option>{copy.topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label><label>{copy.message}<textarea required value={messageForm.message} onChange={(event) => updateMessage('message', event.target.value)} placeholder={copy.messagePlaceholder} /></label>{status && status !== 'sending' && <p className="form-error" role="alert">{status}</p>}<button className="button button-dark full" disabled={status === 'sending'} type="submit">{status === 'sending' ? copy.sending : copy.send}</button><p className="privacy-link"><Link to="/privacy">Privacy notice</Link></p></form>}</AccessibleDialog>
+  return <AccessibleDialog title={copy.title} onClose={onClose}><button className="close" aria-label={copy.close} onClick={onClose}>×</button><p className="eyebrow">{copy.eyebrow}</p><h2>{copy.title}</h2><p className="modal-intro">{copy.intro}</p>{status === 'sent' ? <div className="success"><div className="success-icon">✓</div><p>{copy.sent}</p><button className="button button-dark" onClick={onClose}>{copy.close}</button></div> : <form data-analytics-label="support_enquiry" onSubmit={submit}><label>{copy.name}<input required value={messageForm.name} onChange={(event) => updateMessage('name', event.target.value)} placeholder={copy.namePlaceholder} /></label><label>{copy.email}<input required type="email" value={messageForm.email} onChange={(event) => updateMessage('email', event.target.value)} placeholder="you@example.com" /></label><label>{copy.topic}<select required value={messageForm.topic} onChange={(event) => updateMessage('topic', event.target.value)}><option value="">{copy.select}</option>{copy.topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label><label>{copy.message}<textarea required value={messageForm.message} onChange={(event) => updateMessage('message', event.target.value)} placeholder={copy.messagePlaceholder} /></label>{status && status !== 'sending' && <p className="form-error" role="alert">{status}</p>}<button data-analytics-label="support_enquiry" className="button button-dark full" disabled={status === 'sending'} type="submit">{status === 'sending' ? copy.sending : copy.send}</button><p className="privacy-link"><Link to="/privacy">Privacy notice</Link></p></form>}</AccessibleDialog>
 }
 
-function ApplicationForm({ form, update, save, notice, addressRef, requestedDocuments, documentStatus, documentStatusText, selectDocumentFile, sendDocuments, displayDocuments, locked, busy = false }) {
+function StudentMessagesPage({ user, onBack, onCreated, initialMessageId }) {
+  const [messages, setMessages] = useState([])
+  const [selectedId, setSelectedId] = useState(initialMessageId || null)
+  const [thread, setThread] = useState(null)
+  const [reply, setReply] = useState('')
+  const [newMessageOpen, setNewMessageOpen] = useState(false)
+  const [newSubject, setNewSubject] = useState('')
+  const [newMessage, setNewMessage] = useState('')
+  const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
+  useEffect(() => { if (initialMessageId) setSelectedId(initialMessageId) }, [initialMessageId])
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      try {
+        const result = await api('/api/support-messages')
+        if (active) {
+          const items = result.messages || []
+          setMessages(items)
+          setSelectedId(current => current && items.some(item => item.id === current) ? current : items[0]?.id || null)
+          setError('')
+        }
+      } catch (requestError) { if (active) setError(requestError.message) }
+    }
+    load()
+    const timer = window.setInterval(load, 3000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [])
+  useEffect(() => {
+    if (!selectedId) { setThread(null); return }
+    let active = true
+    const load = async () => {
+      try {
+        const result = await api(`/api/support-messages/${selectedId}/thread`)
+        if (active) { setThread(result); setMessages(items => items.map(item => item.id === selectedId ? { ...item, unread: false } : item)); setError('') }
+      } catch (requestError) { if (active) setError(requestError.message) }
+    }
+    load()
+    const timer = window.setInterval(load, 3000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [selectedId])
+  const sendReply = async event => {
+    event.preventDefault()
+    if (!selectedId || !reply.trim() || sending) return
+    setSending(true); setError('')
+    try {
+      await api(`/api/support-messages/${selectedId}/replies`, { method: 'POST', body: { message: reply.trim() } })
+      setReply('')
+      const result = await api(`/api/support-messages/${selectedId}/thread`)
+      setThread(result)
+      const list = await api('/api/support-messages')
+      setMessages(list.messages || [])
+    } catch (requestError) { setError(requestError.message) } finally { setSending(false) }
+  }
+  const createConversation = async event => {
+    event.preventDefault()
+    if (!newSubject.trim() || !newMessage.trim() || sending) return
+    setSending(true); setError('')
+    try {
+      const result = await api('/api/support-messages', { method: 'POST', body: { topic: newSubject.trim(), message: newMessage.trim() } })
+      setNewMessageOpen(false); setNewSubject(''); setNewMessage(''); setSelectedId(result.id)
+      const list = await api('/api/support-messages')
+      setMessages(list.messages || [])
+      onCreated?.(result.id)
+    } catch (requestError) { setError(requestError.message) } finally { setSending(false) }
+  }
+  const selected = messages.find(item => item.id === selectedId)
+  const entries = thread?.message ? [{ id: thread.message.id, senderRole: 'student', senderName: 'You', message: thread.message.message, createdAt: thread.message.createdAt }, ...(thread.replies || []).map(item => ({ ...item, senderName: item.senderRole === 'student' ? 'You' : item.senderName || 'Your adviser' }))] : []
+  return <div className="adviser-main messages-page student-messages-page">
+    <button className="documents-back-link" onClick={onBack}>Back to your account</button>
+    <div className="adviser-heading"><div><p className="eyebrow">Student account</p><h1>Your <em>messages.</em></h1></div><button className="button button-dark" onClick={() => { setNewMessageOpen(true); setError('') }}>New message</button></div>
+    {error && <p role="alert" className="form-error">{error}</p>}
+    <div className="messages-layout">
+      <section className="messages-list" data-analytics-ignore aria-label="Your conversations">{messages.map(item => <button className={`${selectedId === item.id ? 'message-row active' : 'message-row'}${item.unread ? ' unread' : ''}`} key={item.id} onClick={() => { setNewMessageOpen(false); setSelectedId(item.id) }}><span className="message-avatar">{item.topic?.[0]?.toUpperCase() || 'A'}</span><span><strong>{item.topic}</strong><small>{item.message}</small><em>{new Date(item.updatedAt || item.createdAt).toLocaleString()}</em></span>{Number(item.unread) > 0 && <b className="unread-count" aria-label={`${item.unread} unread adviser replies`}>{item.unread > 99 ? '99+' : item.unread}</b>}</button>)}{!messages.length && <div className="messages-empty"><p>No messages yet.</p><button className="button button-dark" onClick={() => setNewMessageOpen(true)}>Start a conversation</button></div>}</section>
+      <section className="message-reader" aria-label="Conversation">{newMessageOpen ? <div className="student-new-message"><p className="eyebrow">New message to your adviser</p><h2>Start a conversation</h2><p className="student-new-message-intro">Add a subject and your message. Your adviser can reply here.</p><form className="conversation-composer" data-analytics-label="support_enquiry" onSubmit={createConversation}><label htmlFor="student-message-subject">Subject</label><input id="student-message-subject" required maxLength={100} value={newSubject} onChange={event => setNewSubject(event.target.value)} placeholder="Can you help me fill the form?" /><label htmlFor="student-message-first">Message</label><textarea id="student-message-first" maxLength={5000} required value={newMessage} onChange={event => setNewMessage(event.target.value)} placeholder="Write your message…" /><div className="student-new-message-actions"><button type="button" className="button button-light" onClick={() => setNewMessageOpen(false)}>Cancel</button><button className="button button-dark" disabled={sending || !newSubject.trim() || !newMessage.trim()}>{sending ? 'Sending…' : 'Start conversation'}</button></div></form></div> : selected ? <><p className="eyebrow">{thread?.message?.topic || selected.topic}</p><h2>Conversation with your adviser</h2><div className="conversation-thread" aria-live="polite">{entries.map(item => <article className={`conversation-message ${item.senderRole === 'student' ? 'from-student' : 'from-adviser'}`} key={item.id}><div><strong>{item.senderName}</strong><time>{new Date(item.createdAt).toLocaleString()}</time></div><p>{item.message}</p></article>)}</div><form className="conversation-composer" data-analytics-label="message_reply" onSubmit={sendReply}><label htmlFor="student-message-reply">Reply to your adviser</label><textarea id="student-message-reply" maxLength={5000} required value={reply} onChange={event => setReply(event.target.value)} placeholder="Write your message…" /><button className="button button-dark" disabled={sending || !reply.trim()}>{sending ? 'Sending…' : 'Send message'}</button></form></> : <div className="student-message-empty-state"><p>Select a conversation or start a new message.</p><p>Your name and email are already linked to your student account.</p></div>}</section>
+    </div>
+  </div>
+}
+
+function ApplicationForm({ form, update, save, notice, addressRef, requestedDocuments, documentStatus, documentStatusText, selectDocumentFile, sendDocuments, displayDocuments, locked, busy = false, unavailableUniversities = [] }) {
   const pt = usePortalText()
-  const field = (label, key, type = 'text', placeholder = '', required = false) => <label className="portal-field"><EditableText embedded field={`form.${key}.label`} label={`Form label: ${key}`}>{label}</EditableText><input required={required} type={type} value={form[key] || ''} onChange={(event) => { update(key, event.target.value); if (key === 'homeAddress') update('addressPlaceId', '') }} placeholder={placeholder} /></label>
-  const choice = (label, key, options, required = false, disabledOptions = [], disabled = false) => <label className="portal-field"><EditableText embedded field={`form.${key}.label`} label={`Form label: ${key}`}>{label}</EditableText><select required={required} disabled={disabled} value={form[key] || ''} onChange={(event) => update(key, event.target.value)}><option value="">{pt('selectOption', 'Select an option')}</option>{options.map((option) => <option key={option} disabled={disabledOptions.includes(option)}>{option}</option>)}</select></label>
+  const normalizeOption = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-GB')
+  const field = (label, key, type = 'text', placeholder = '', required = false) => <label className="portal-field"><EditableText embedded field={`form.${key}.label`} label={`Form label: ${key}`}>{label}</EditableText><input required={required} type={type} value={form[key] || ''} onChange={(event) => { const value = event.target.value; update(key, key === 'firstName' || key === 'lastName' ? value.replace(/^(\s*)(\p{L})/u, (_match, whitespace, letter) => `${whitespace}${letter.toLocaleUpperCase()}`) : value); if (key === 'homeAddress') update('addressPlaceId', '') }} placeholder={placeholder} /></label>
+  const choice = (label, key, options, required = false, disabledOptions = [], disabled = false) => <label className="portal-field"><EditableText embedded field={`form.${key}.label`} label={`Form label: ${key}`}>{label}</EditableText><select required={required} disabled={disabled} value={form[key] || ''} onChange={(event) => update(key, event.target.value)}><option value="">{pt('selectOption', 'Select an option')}</option>{options.map((option) => { const unavailable = disabledOptions.some(value => normalizeOption(value) === normalizeOption(option)); return <option key={option} value={option} disabled={unavailable}>{key === 'university' && unavailable ? `${option} — already applied` : option}</option> })}</select></label>
   const phoneCountry = countries.find((country) => country.code === (form.phoneCountry || 'GB'))
   const englishExempt = form.countryOfBirth === 'United Kingdom' || form.schoolCountry === 'United Kingdom'
   const englishExemptionOption = 'Born in UK OR Studied in UK'
@@ -157,12 +241,12 @@ function ApplicationForm({ form, update, save, notice, addressRef, requestedDocu
       {field(pt('school', 'School or college'), 'school', 'text', 'Name of your school', true)}{choice(pt('schoolCountry', 'School or college country'), 'schoolCountry', countryOptions, true)}{choice(pt('qualification', 'Highest qualification'), 'qualification', ['A levels', 'IB Diploma', 'European Baccalaureate', 'High school diploma', 'Undergraduate degree', 'Other'], true)}{choice(pt('graduationYear', 'Graduation year'), 'graduationYear', graduationYears, true)}{choice(pt('englishTest', 'English test'), 'englishTest', englishOptions, true, englishDisabled, englishExempt)}{field(pt('score', 'Overall score (if available)'), 'englishScore', 'text', 'e.g. 7.0')}
     </div></section>
     <section className="form-section" id="application-choices"><div className="form-section-heading"><span className={isApplicationSectionComplete(form, 'choices', requestedDocuments, documentStatus) ? 'section-complete' : ''}>{isApplicationSectionComplete(form, 'choices', requestedDocuments, documentStatus) ? '✓' : '03'}</span><div><h3>{pt('choices', 'University choices')}</h3><p>{pt('choicesCopy', 'Choose the course and intake you want us to support.')}</p></div></div><div className="portal-form-grid">
-      {choice(pt('preferredUniversity', 'Preferred university'), 'university', universities.map((uni) => uni.name), true)}{field(pt('preferredCourse', 'Preferred course'), 'course', 'text', 'e.g. Computer Science', true)}{choice(pt('studyLevel', 'Study level'), 'level', ['Foundation', 'Undergraduate', 'Postgraduate'], true)}{choice(pt('preferredIntake', 'Preferred intake'), 'intake', preferredIntakes, true)}
-    </div></section>
+      {choice(pt('preferredUniversity', 'Preferred university'), 'university', universities.map((uni) => uni.name), true, unavailableUniversities)}{field(pt('preferredCourse', 'Preferred course'), 'course', 'text', 'e.g. Computer Science', true)}{choice(pt('studyLevel', 'Study level'), 'level', ['Foundation', 'Undergraduate', 'Postgraduate'], true)}{choice(pt('preferredIntake', 'Preferred intake'), 'intake', preferredIntakes, true)}
+    </div>{unavailableUniversities.length > 0 && <p className="field-help">Universities with an existing application are unavailable. Continue that application or choose another university.</p>}</section>
     <section className="form-section" id="application-experience"><div className="form-section-heading"><span className={isApplicationSectionComplete(form, 'experience', requestedDocuments, documentStatus) ? 'section-complete' : ''}>{isApplicationSectionComplete(form, 'experience', requestedDocuments, documentStatus) ? '✓' : '04'}</span><div><h3>{pt('experience', 'Experience & statement')}</h3><p>{pt('experienceCopy', 'Complete your employment or volunteering details and tell us what support you need.')}</p></div></div><div className="portal-form-grid">{field(pt('employment', 'Employment or volunteering'), 'employment', 'text', 'e.g. Part-time work or volunteering', true)}{choice(pt('support', 'What support do you need?'), 'supportNeeds', ['Choosing a course', 'Application review', 'Personal statement', 'Document preparation', 'Everything'], true)}<label className="portal-field full-field">{pt('whyCourse', 'Why do you want to study this course?')} <span className="field-optional">{pt('optional', '(optional)')}</span><textarea value={form.motivation || ''} onChange={(event) => update('motivation', event.target.value)} placeholder={pt('motivationPlaceholder', 'Tell us about your interests, goals and experience...')} /></label></div></section>
     {displayDocuments && requestedDocuments.length > 0 && <section className="form-section" id="application-documents"><div className="form-section-heading"><span className={isApplicationSectionComplete(form, 'documents', requestedDocuments, documentStatus) ? 'section-complete' : ''}>{isApplicationSectionComplete(form, 'documents', requestedDocuments, documentStatus) ? '✓' : '05'}</span><div><h3>Documents requested by your adviser</h3><p>Upload the requested documents and send them for review.</p></div></div><div className="document-list">{requestedDocuments.map((key) => { const document = documentCatalog.find(([documentKey]) => documentKey === key); if (!document) return null; return <label className="document-row" key={key}><span className={documentStatus(key) === 'rejected' ? 'document-check rejected' : form[key] ? 'document-check checked' : 'document-check'}>{documentStatus(key) === 'rejected' ? '!' : form[key] ? '✓' : '↑'}</span><span><strong>{document[1]}</strong><small className={`document-status ${documentStatus(key)}`}>{documentStatusText(key)} · PDF, JPG or PNG · max 10 MB</small></span><input type="file" accept=".pdf,.jpg,.jpeg,.png" disabled={['accepted', 'submitted'].includes(documentStatus(key))} onChange={(event) => selectDocumentFile(key, event.target.files[0])} /></label>})}</div>{requestedDocuments.some(key => !['accepted', 'submitted'].includes(documentStatus(key))) && <div className="form-actions"><button className="button button-dark" onClick={sendDocuments}>Send documents</button></div>}</section>}
     <div className="terms-acceptance"><label><input type="checkbox" checked={Boolean(form.termsAccepted)} onChange={(event) => update('termsAccepted', event.target.checked)} /> <span>{pt('terms', 'I have read and agree to the')} <a href="/terms" target="_blank" rel="noreferrer">{pt('termsLink', 'Terms & Conditions')}</a>.</span></label><p>{pt('termsRequired', 'You must accept the Terms & Conditions before submitting your application.')} <Link to="/privacy">Privacy notice</Link></p></div>
-    <div className="form-actions"><button className="button button-dark" onClick={() => save('draft')}>{pt('saveApplication', 'Save application')}</button><button className="submit-application" onClick={() => save('submitted')}>{pt('submitReady', 'Submit when ready')}</button></div>
+    <div className="form-actions"><button data-analytics-label="application_save" className="button button-dark" onClick={() => save('draft')}>{pt('saveApplication', 'Save application')}</button><button data-analytics-label="application_submit" className="submit-application" onClick={() => save('submitted')}>{pt('submitReady', 'Submit when ready')}</button></div>
   </fieldset></>
 }
 
@@ -172,16 +256,36 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
   const pt = usePortalText()
   const initialForm = () => ({ firstName: currentUser?.firstName || '', lastName: currentUser?.lastName || '', email: currentUser?.email || '', phoneCountry: 'GB', university: selectedUniversity?.name || '', course: selectedUniversity?.courses?.[0] || '', level: 'Undergraduate', intake: 'September 2027' })
   const [form, setForm] = useState(initialForm)
-  const [snapshot, setSnapshot] = useState(preview ? { id: null, status: 'draft', requestedDocuments: [] } : null)
+  const [snapshot, setSnapshot] = useState(preview ? { id: null, status: 'draft', version: 0, requestedDocuments: [] } : { id: null, status: 'draft', version: 0, requestedDocuments: [] })
+  const [applicationList, setApplicationList] = useState([])
   const [notice, setNotice] = useState('')
   const [loadError, setLoadError] = useState('')
   const [busy, setBusy] = useState(false)
   const [conflict, setConflict] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0)
+  const [latestUnreadMessageId, setLatestUnreadMessageId] = useState(null)
+  const [initialSupportMessageId, setInitialSupportMessageId] = useState(null)
+  const [messagesReturnView, setMessagesReturnView] = useState('editor')
   const [securityOpen, setSecurityOpen] = useState(false)
-  const [accountView, setAccountView] = useState('editor')
+  const [accountView, setAccountView] = useState(preview ? 'editor' : 'profile')
+  const [profileEmail, setProfileEmail] = useState(currentUser?.email || '')
+  const [profilePhone, setProfilePhone] = useState(currentUser?.phone || '')
+  const [profilePendingEmail, setProfilePendingEmail] = useState(currentUser?.pendingEmail || '')
+  const [profileBusy, setProfileBusy] = useState(false)
+  const [profileNotice, setProfileNotice] = useState('')
+  const [profileError, setProfileError] = useState('')
+  const noticeStorageKey = `student-account-notices:${currentUser?.id || 'preview'}`
+  const [dismissedNotices, setDismissedNotices] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(noticeStorageKey) || '[]') } catch { return [] }
+  })
+  const [statusNotices, setStatusNotices] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`${noticeStorageKey}:status`) || '[]') } catch { return [] }
+  })
   const [documentFiles, setDocumentFiles] = useState({})
   const addressRef = useRef(null)
+  const snapshotRef = useRef(snapshot)
+  snapshotRef.current = snapshot
   const dirty = useRef(false)
   const busyRef = useRef(false)
   const version = useRef(0)
@@ -190,6 +294,7 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
   const locked = snapshot?.status === 'complete'
   const update = (key, value) => { dirty.current = true; setForm(current => ({ ...current, [key]: value })) }
   const applySnapshot = (result, replaceForm = false) => {
+    snapshotRef.current = result
     setSnapshot(result)
     if (replaceForm || !dirty.current) {
       version.current = result.version || 0
@@ -199,8 +304,12 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
   }
   const load = async (replaceForm = false) => {
     if (preview) return
-    const result = await api('/api/application')
-    applySnapshot(result, replaceForm)
+    const result = await api('/api/applications')
+    const applications = result.applications || []
+    setApplicationList(applications)
+    const selected = snapshot?.id ? applications.find(item => item.id === snapshot.id) : null
+    if (selected) applySnapshot(await api(`/api/applications/${selected.id}`), replaceForm || selected.id !== snapshot?.id)
+    else if (replaceForm || snapshot?.id) { const empty = { id: null, status: 'draft', version: 0, requestedDocuments: [] }; snapshotRef.current = empty; setSnapshot(empty); setForm(initialForm()); version.current = 0 }
     setLoadError('')
     if (replaceForm) { dirty.current = false; setConflict(false); setDocumentFiles({}); setNotice('Latest application loaded.') }
     return result
@@ -210,7 +319,19 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
     let active = true
     const sync = async () => {
       if (busyRef.current || document.hidden) return
-      try { const result = await api('/api/application'); if (active) { applySnapshot(result); setLoadError('') } } catch (error) { if (active) setLoadError(error.message) }
+      try {
+        const result = await api('/api/applications')
+        if (!active) return
+        const applications = result.applications || []
+        setApplicationList(applications)
+        const current = snapshotRef.current
+        const selected = current?.id ? applications.find(item => item.id === current.id) : null
+        if (selected) {
+          const refreshed = await api(`/api/applications/${selected.id}`)
+          if (active && snapshotRef.current?.id === selected.id) applySnapshot(refreshed)
+        }
+        setLoadError('')
+      } catch (error) { if (active) setLoadError(error.message) }
     }
     sync()
     const timer = window.setInterval(sync, 30000)
@@ -241,16 +362,36 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
     }
     return () => { disposed = true; script?.removeEventListener('load', initialize); if (autocomplete) window.google.maps.event.clearInstanceListeners(autocomplete) }
   }, [securityOpen, Boolean(snapshot)])
-  const mutationError = error => { if ([409, 428].includes(error.status)) setConflict(true); setNotice(error.message) }
+  const mutationError = error => {
+    if ([409, 428].includes(error.status) && error.code !== 'UNIVERSITY_ALREADY_APPLIED') setConflict(true)
+    const requestId = error.details?.requestId
+    setNotice(requestId ? `${error.message} Reference: ${requestId}` : error.message)
+  }
   const save = async status => {
     if (preview) return
-    if (busy || locked || !snapshot || conflict) return
+    if (busy || locked || conflict) return
     const validation = validateApplicationData(form, { submitted: status === 'submitted' || (snapshot?.status && snapshot.status !== 'draft') })
     if (validation.errors.length) { setNotice(validation.errors.join(' ')); return }
+    const normalizeUniversity = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-GB')
+    const selectedUniversity = normalizeUniversity(validation.data.university)
+    if (selectedUniversity && applicationList.some(item => item.id !== snapshot?.id && normalizeUniversity(item.data?.university) === selectedUniversity)) {
+      setNotice('You already have an application for this university. Continue that application or choose a different university.')
+      return
+    }
     setBusy(true); busyRef.current = true; setNotice('')
     try {
-      const result = await api('/api/application', { method: 'PUT', body: { data: validation.data, status, version: version.current, termsVersion: TERMS_VERSION } })
+      const created = snapshot?.id ? null : await api('/api/applications', { method: 'POST', body: {} })
+      // Keep the new draft ID even if updating it fails, so a retry edits this
+      // record instead of creating another empty draft.
+      if (created) {
+        version.current = created.version || 0
+        snapshotRef.current = created
+        setSnapshot(created)
+      }
+      const target = snapshot?.id ? snapshot : created
+      const result = await api(`/api/applications/${target.id}`, { method: 'PUT', body: { data: validation.data, status, version: target.version || version.current, termsVersion: TERMS_VERSION } })
       dirty.current = false; applySnapshot(result, true)
+      const listed = await api('/api/applications'); setApplicationList(listed.applications || [])
       setNotice(status === 'submitted' ? 'Application submitted successfully.' : 'Application saved successfully.')
     } catch (error) { mutationError(error) } finally { setBusy(false); busyRef.current = false }
   }
@@ -258,7 +399,7 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
     if (preview) return
     if (busy || !snapshot?.id || locked || !window.confirm('Delete your application and its uploaded documents? This cannot be undone.')) return
     setBusy(true); busyRef.current = true; setNotice('')
-    try { await api('/api/application', { method: 'DELETE', body: { version: version.current } }); dirty.current = false; setDocumentFiles({}); await load(true); setNotice('Your application has been deleted.') } catch (error) { mutationError(error) } finally { setBusy(false); busyRef.current = false }
+    try { await api(`/api/applications/${snapshot.id}`, { method: 'DELETE', body: { version: version.current } }); dirty.current = false; setDocumentFiles({}); await load(true); setNotice('Your application has been deleted.') } catch (error) { mutationError(error) } finally { setBusy(false); busyRef.current = false }
   }
   const selectDocumentFile = (key, file) => {
     if (!file) return
@@ -275,7 +416,7 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
     setBusy(true); busyRef.current = true; setNotice('')
     try {
       for (const [key, file] of entries) {
-        const result = await api('/api/application/documents', { method: 'PATCH', body: { version: version.current, documents: { [key]: { fileName: file.name, mimeType: file.type, content: await readFile(file) } } } })
+        const result = await api(`/api/applications/${snapshot.id}/documents`, { method: 'PATCH', body: { version: version.current, documents: { [key]: { fileName: file.name, mimeType: file.type, content: await readFile(file) } } } })
         version.current = result.version
         setSnapshot(result)
         setDocumentFiles(current => { const next = { ...current }; delete next[key]; return next })
@@ -289,10 +430,142 @@ function DashboardPortal({ setMode, selectedUniversity, onLogout, preview = fals
   const visibleSections = applicationSections.filter(section => section.id !== 'documents' || requestedDocuments.length)
   const backHome = () => { if (!dirty.current && !Object.keys(documentFiles).length || window.confirm('Leave this page and discard unsaved changes?')) setMode('home') }
   const savedView = accountView === 'saved'
-  const showingSaved = snapshot?.id && snapshot.status === 'draft'
-  const showingSubmitted = snapshot?.id && snapshot.status !== 'draft'
-  const applicationCard = <article className="application-list-card"><div><p>{snapshot?.status === 'draft' ? pt('savedApplications', 'Saved Application') : pt('submittedApplications', 'Submitted Application')}</p><h3>{[form.university, form.course].filter(Boolean).join(' · ') || 'Your university application'}</h3><span>{snapshot?.status === 'draft' ? 'Draft · Saved to your account' : `Status: ${({ submitted: 'Awaiting adviser review', in_review: 'In review', complete: 'Processing complete', offer_received: 'Offer received' })[snapshot?.status] || snapshot?.status}`}</span></div><div className="application-card-actions"><button className="button button-dark" onClick={() => { setSecurityOpen(false); setAccountView('editor') }}>{snapshot?.status === 'draft' ? 'Continue application' : 'View application'}</button></div></article>
-  return <div className="portal-page dashboard-page"><div className="portal-top"><button className="logo" data-preview-navigation onClick={backHome}><span>student</span><strong>advisor</strong><b>®</b></button><ThemeToggle /><div className="portal-nav"><div className="student-account-language"><LanguageSwitcher /></div><span>{userDisplayName(currentUser)}’s application</span><button data-preview-navigation onClick={() => setSecurityOpen(!securityOpen)}>Account security</button><button disabled={busy} onClick={onLogout}>{pt('signOut', 'Sign out')}</button></div></div><div className="portal-layout"><aside className="progress-sidebar"><p className="eyebrow">Student application</p><h1>{pt('yourProgress', 'Your progress.')}</h1><div className="progress-ring" style={{ '--application-progress': `${progress}%` }}><strong>{progress}%</strong><span>{pt('complete', 'complete')}</span></div><p className="progress-copy">One application, saved securely to your account. Keep your current application updated.</p><nav className="account-application-nav" aria-label="Your applications"><button className={accountView === 'saved' ? 'active' : ''} aria-current={accountView === 'saved' ? 'page' : undefined} onClick={() => { setSecurityOpen(false); setAccountView('saved') }}>{pt('savedApplications', 'Saved Application')}</button><button className={accountView === 'submitted' ? 'active' : ''} aria-current={accountView === 'submitted' ? 'page' : undefined} onClick={() => { setSecurityOpen(false); setAccountView('submitted') }}>{pt('submittedApplications', 'Submitted Application')}</button></nav>{accountView === 'editor' && <nav className="section-nav" aria-label="Application sections">{visibleSections.map(section => <button key={section.id} onClick={() => { setSecurityOpen(false); window.setTimeout(() => document.getElementById(`application-${section.id}`)?.scrollIntoView({ behavior: 'smooth' }), 0) }}><span className="section-nav-check" aria-hidden="true">{isApplicationSectionComplete(form, section.id, requestedDocuments, documentStatus) ? '✓' : ''}</span>{portalSectionTitle(pt, section)}</button>)}</nav>}<button className="advisor-help" onClick={() => setSupportOpen(true)}>{pt('needHelp', 'Need help?')} <u>{pt('askAdvisor', 'Ask your advisor')}</u></button></aside><main className="application-main">{securityOpen ? <AccountSecurity preview={preview} onClose={() => setSecurityOpen(false)} /> : accountView !== 'editor' ? <><div className="application-heading"><h2>{savedView ? pt('savedApplications', 'Saved Application') : pt('submittedApplications', 'Submitted Application')}</h2></div>{loadError && <div role="alert" className="request-status">{loadError}<button onClick={() => load().catch(error => setLoadError(error.message))}>Retry loading application</button></div>}{!snapshot ? <p role="status">Loading applications…</p> : (savedView ? showingSaved : showingSubmitted) ? <div className="application-list">{applicationCard}</div> : <section className="empty-application"><h3>{savedView ? 'No saved application yet' : 'No submitted application yet'}</h3><p>{savedView ? 'Your draft application will appear here when you save it.' : 'Your application will appear here after you submit it for adviser review.'}</p><button className="button button-dark" onClick={() => setAccountView('editor')}>Start or continue application</button></section>}</> : <>{loadError && <div role="alert" className="request-status">{loadError}<button onClick={() => load().catch(error => setLoadError(error.message))}>Retry loading application</button></div>}{!snapshot ? <p role="status">Loading your application…</p> : <>{snapshot.id && <p className="application-status-banner">Status: {({ draft: 'Draft', submitted: 'Awaiting adviser review', in_review: 'In review', complete: 'Processing complete', offer_received: 'Offer received' })[snapshot.status] || snapshot.status}</p>}{conflict && <div role="alert" className="request-status"><p>The application changed on the server. Your unsaved entries remain on this page. Copy anything you need before loading the latest version.</p><button onClick={() => { if (window.confirm('Discard unsaved entries and load the latest application?')) load(true).catch(mutationError) }}>Load latest application</button></div>}<ApplicationForm form={form} update={update} save={save} notice={notice} addressRef={addressRef} requestedDocuments={requestedDocuments} documentStatus={documentStatus} documentStatusText={documentStatusText} selectDocumentFile={selectDocumentFile} sendDocuments={sendDocuments} displayDocuments={requestedDocuments.length > 0} locked={locked} busy={busy || conflict} /><div className="single-application-actions">{snapshot.id && !locked && <button disabled={busy || conflict} className="delete-application" onClick={deleteApplication}>Delete application</button>}</div><p className="privacy-link">Read our <Link to="/privacy">privacy notice</Link> for information about your application and documents.</p></>}</>}</main></div>{supportOpen && <SupportModal user={currentUser} onClose={() => setSupportOpen(false)} />}</div>
+  const dismissNotice = id => {
+    setDismissedNotices(current => {
+      const next = [...new Set([...current, id])]
+      try { localStorage.setItem(noticeStorageKey, JSON.stringify(next)) } catch { /* Browser storage may be unavailable. */ }
+      return next
+    })
+  }
+  useEffect(() => {
+    if (preview || !currentUser?.id) return
+    const key = `${noticeStorageKey}:application-status`
+    const dismissedKey = `${noticeStorageKey}:status`
+    let previous = {}
+    let notices = []
+    try {
+      previous = JSON.parse(localStorage.getItem(key) || '{}')
+      notices = JSON.parse(localStorage.getItem(dismissedKey) || '[]')
+    } catch { /* Start with an empty notice history if storage is unavailable. */ }
+    let changed = false
+    for (const item of applicationList) {
+      const priorStatus = previous[item.id]
+      const status = item.status
+      if (priorStatus && priorStatus !== status && ['in_review', 'complete'].includes(status)) {
+        const id = `${item.id}:${status}`
+        if (!notices.some(notice => notice.id === id)) {
+          notices = [...notices, { id, applicationId: item.id, university: item.data?.university || 'your university', status }]
+          changed = true
+        }
+      }
+      if (previous[item.id] !== status) { previous[item.id] = status; changed = true }
+    }
+    if (changed) {
+      try { localStorage.setItem(key, JSON.stringify(previous)); localStorage.setItem(dismissedKey, JSON.stringify(notices)) } catch { /* Notices still work for this session. */ }
+      setStatusNotices(notices)
+    }
+  }, [applicationList, currentUser?.id, noticeStorageKey, preview])
+  const dismissStatusNotice = id => {
+    setStatusNotices(current => {
+      const next = current.filter(notice => notice.id !== id)
+      try { localStorage.setItem(`${noticeStorageKey}:status`, JSON.stringify(next)) } catch { /* Keep the current page responsive if storage is unavailable. */ }
+      return next
+    })
+  }
+  useEffect(() => {
+    if (preview || !currentUser?.id) return
+    let active = true
+    const refreshUnread = async () => {
+      try {
+        const result = await api('/api/support-messages')
+        if (active) {
+          setSupportUnreadCount(result.unreadCount || 0)
+          const unreadMessageId = result.messages?.find(item => Number(item.unread) > 0)?.id || null
+          setLatestUnreadMessageId(unreadMessageId)
+          if (!unreadMessageId) setDismissedNotices(current => {
+            const next = current.filter(id => !id.startsWith('message:'))
+            try { localStorage.setItem(noticeStorageKey, JSON.stringify(next)) } catch { /* Ignore unavailable browser storage. */ }
+            return next
+          })
+        }
+      } catch { /* The message page reports connection errors when opened. */ }
+    }
+    refreshUnread()
+    const timer = window.setInterval(refreshUnread, 5000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [preview, currentUser?.id])
+  useEffect(() => {
+    setProfileEmail(currentUser?.email || '')
+    setProfilePhone(currentUser?.phone || '')
+    setProfilePendingEmail(currentUser?.pendingEmail || '')
+  }, [currentUser?.id])
+  useEffect(() => {
+    if (!currentUser?.phone && !profilePhone) {
+      const existingPhone = applicationList.find(item => item.data?.phone)?.data?.phone
+      if (existingPhone) setProfilePhone(existingPhone)
+    }
+  }, [applicationList, currentUser?.phone, profilePhone])
+  const openStudentMessages = () => { setMessagesReturnView(accountView === 'messages' ? 'editor' : accountView); setSecurityOpen(false); setAccountView('messages') }
+  const messageCreated = id => { setInitialSupportMessageId(id); setSupportOpen(false); setSecurityOpen(false); setAccountView('messages') }
+  const saveProfile = async event => {
+    event.preventDefault()
+    setProfileBusy(true); setProfileError(''); setProfileNotice('')
+    try {
+      const result = await api('/api/me/profile', { method: 'PUT', body: { email: profileEmail, phone: profilePhone } })
+      setProfileEmail(result.user?.email || profileEmail)
+      setProfilePhone(result.user?.phone || '')
+      setProfilePendingEmail(result.user?.pendingEmail || '')
+      setProfileNotice(result.message || 'Profile updated.')
+    } catch (error) { setProfileError(error.message) } finally { setProfileBusy(false) }
+  }
+  const savedApplications = applicationList.filter(item => item.status === 'draft')
+  const submittedApplications = applicationList.filter(item => item.status !== 'draft')
+  const unavailableUniversities = [...new Set(applicationList
+    .filter(item => item.id !== snapshot?.id)
+    .map(item => item.data?.university?.trim())
+    .filter(Boolean))]
+  const startNewApplication = () => {
+    const previous = [...applicationList].sort((left, right) => new Date(right.updatedAt || right.createdAt || 0) - new Date(left.updatedAt || left.createdAt || 0))[0]
+    const prefilled = { ...initialForm(), ...(previous?.data || {}) }
+    // A new application should reuse personal/education/experience details, but
+    // start with no university choices, support request, or terms acceptance.
+    for (const key of ['university', 'course', 'level', 'intake', 'budget', 'supportNeeds', 'termsAccepted']) delete prefilled[key]
+    const empty = { id: null, status: 'draft', version: 0, requestedDocuments: [] }
+    dirty.current = false; snapshotRef.current = empty; setSnapshot(empty); setForm(prefilled); version.current = 0; setDocumentFiles({}); setConflict(false); setNotice(''); setSecurityOpen(false); setAccountView('editor')
+  }
+  const openApplication = async id => { setBusy(true); try { const result = await api(`/api/applications/${id}`); dirty.current = false; applySnapshot(result, true); setConflict(false); setDocumentFiles({}); setNotice(''); setAccountView('editor'); setSecurityOpen(false) } catch (error) { setLoadError(error.message) } finally { setBusy(false) } }
+  const applicationCards = (savedView ? savedApplications : submittedApplications).map(item => {
+    const submitted = item.status !== 'draft'
+    const stage = item.status === 'submitted' ? 0 : item.status === 'in_review' ? 1 : 2
+    const stages = ['Awaiting review', 'In processing', 'Processed']
+    const outstandingDocuments = (item.requestedDocuments || []).filter(key => !['submitted', 'accepted'].includes(item.documentSubmissions?.[key]?.status || 'pending'))
+    return <article className="application-list-card" key={item.id}>
+      <div className="application-list-card-content">
+        <p>{submitted ? 'Submitted application' : 'Saved application'}</p>
+        <h3>{[item.data?.university, item.data?.course].filter(Boolean).join(' · ') || 'Your university application'}</h3>
+        {submitted ? <>
+          <div className="application-progress" aria-label={`Application status: ${stages[stage]}`}>
+            <div className="application-progress-track" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow={stage + 1} aria-valuetext={stages[stage]}>
+              <span style={{ width: `${((stage + 1) / stages.length) * 100}%` }} />
+            </div>
+            <ol>{stages.map((label, index) => <li key={label} className={index <= stage ? 'current' : ''} aria-current={index === stage ? 'step' : undefined}>{label}</li>)}</ol>
+          </div>
+          {outstandingDocuments.length > 0 && <button className="requested-upload-prompt" onClick={() => openApplication(item.id)}>Documents requested by your adviser — upload now <span aria-hidden="true">→</span></button>}
+        </> : <span>Draft · Saved to your account</span>}
+      </div>
+      <div className="application-card-actions"><button className="button button-dark" onClick={() => openApplication(item.id)}>{submitted ? 'View application' : 'Continue application'}</button></div>
+    </article>
+  })
+  const requestedDocumentNotices = applicationList.flatMap(item => {
+    const outstanding = (item.requestedDocuments || []).filter(key => !['submitted', 'accepted'].includes(item.documentSubmissions?.[key]?.status || 'pending'))
+    return outstanding.length ? [{ id: `documents:${item.id}`, applicationId: item.id, university: item.data?.university || 'your application' }] : []
+  })
+  const profileNotices = <section className="student-profile-notices" aria-label="Account updates">
+    {requestedDocumentNotices.filter(item => !dismissedNotices.includes(item.id)).map(item => <button className="student-profile-notice" key={item.id} onClick={() => { dismissNotice(item.id); openApplication(item.applicationId) }}>Documents requested by your adviser — upload now <span aria-hidden="true">→</span></button>)}
+    {latestUnreadMessageId && supportUnreadCount > 0 && !dismissedNotices.includes(`message:${latestUnreadMessageId}`) && <button className="student-profile-notice" onClick={() => { dismissNotice(`message:${latestUnreadMessageId}`); openStudentMessages() }}>You have a new message to read <span aria-hidden="true">→</span></button>}
+    {statusNotices.filter(item => !dismissedNotices.includes(`status:${item.id}`)).map(item => <button className="student-profile-notice" key={item.id} onClick={() => { dismissNotice(`status:${item.id}`); dismissStatusNotice(item.id); setAccountView('submitted') }}>Your application status for {item.university} is {item.status === 'in_review' ? 'In Processing' : 'Processed'} now. <span aria-hidden="true">→</span></button>)}
+  </section>
+  return <div className="portal-page dashboard-page"><div className="portal-top"><button className="logo" data-preview-navigation onClick={backHome}><span>student</span><strong>advisor</strong><b>®</b></button><ThemeToggle /><div className="portal-nav"><div className="student-account-language"><LanguageSwitcher /></div><span>{userDisplayName(currentUser)}’s application</span><button data-preview-navigation onClick={() => setSecurityOpen(!securityOpen)}>Account security</button><button onClick={() => { setSecurityOpen(false); setAccountView('profile') }}>Profile</button><button disabled={busy} onClick={onLogout}>{pt('signOut', 'Sign out')}</button></div></div><div className="portal-layout"><aside className="progress-sidebar"><p className="eyebrow">Student application</p>{accountView === 'editor' && !securityOpen && <><h1>{pt('yourProgress', 'Your progress.')}</h1><div className="progress-ring" style={{ '--application-progress': `${progress}%` }}><strong>{progress}%</strong><span>{pt('complete', 'complete')}</span></div></>}<p className="progress-copy">Save up to 10 drafts and submit up to 3 applications.</p><nav className="account-application-nav" aria-label="Your applications"><button className={accountView === 'saved' ? 'active' : ''} aria-current={accountView === 'saved' ? 'page' : undefined} onClick={() => { setSecurityOpen(false); setAccountView('saved') }}><span className="application-count">{savedApplications.length}/10</span> {pt('savedApplications', 'Saved Application')}</button><button className={accountView === 'submitted' ? 'active' : ''} aria-current={accountView === 'submitted' ? 'page' : undefined} onClick={() => { setSecurityOpen(false); setAccountView('submitted') }}><span className="application-count">{submittedApplications.length}/3</span> {pt('submittedApplications', 'Submitted Application')}</button><button className={accountView === 'editor' && !snapshot?.id ? 'active' : ''} onClick={startNewApplication} disabled={savedApplications.length >= 10}>Start a new application</button></nav>{accountView === 'editor' && <nav className="section-nav" aria-label="Application sections">{visibleSections.map(section => <button key={section.id} onClick={() => { setSecurityOpen(false); window.setTimeout(() => document.getElementById(`application-${section.id}`)?.scrollIntoView({ behavior: 'smooth' }), 0) }}><span className="section-nav-check" aria-hidden="true">{isApplicationSectionComplete(form, section.id, requestedDocuments, documentStatus) ? '✓' : ''}</span>{portalSectionTitle(pt, section)}</button>)}</nav>}<button className="advisor-help" onClick={openStudentMessages}>{pt('needHelp', 'Need help?')} <u>{pt('askAdvisor', 'Ask your advisor')}</u>{supportUnreadCount > 0 && <span className="unread-count" aria-label={`${supportUnreadCount} unseen messages`}>{supportUnreadCount > 99 ? '99+' : supportUnreadCount}</span>}</button></aside><main className="application-main">{securityOpen ? <AccountSecurity preview={preview} onClose={() => setSecurityOpen(false)} /> : accountView === 'messages' ? <StudentMessagesPage user={currentUser} onBack={() => setAccountView(messagesReturnView)} onCreated={messageCreated} initialMessageId={initialSupportMessageId} /> : accountView === 'profile' ? <><div className="application-heading"><h2>Profile</h2></div><form className="student-profile-card" onSubmit={saveProfile}><p>Your registered account details</p><div className="student-profile-readonly"><span>Registered name</span><strong>{userDisplayName(currentUser)}</strong></div><label>Email address<input required type="email" autoComplete="email" maxLength={255} value={profileEmail} onChange={event => setProfileEmail(event.target.value)} /></label><label>Mobile number<input type="tel" autoComplete="tel" maxLength={32} value={profilePhone} onChange={event => setProfilePhone(event.target.value)} placeholder="Add a mobile number (optional)" /></label>{profilePendingEmail && <p role="status">Verify {profilePendingEmail} from the email we sent. It will become your sign-in address after verification.</p>}{profileError && <p className="form-error" role="alert">{profileError}</p>}{profileNotice && <p role="status">{profileNotice}</p>}<button data-analytics-label="profile_save" className="button button-dark" type="submit" disabled={profileBusy}>{profileBusy ? 'Saving…' : 'Save profile'}</button></form>{profileNotices}</> : accountView !== 'editor' ? <><div className="application-heading"><h2>{savedView ? pt('savedApplications', 'Saved Application') : pt('submittedApplications', 'Submitted Application')}</h2></div>{loadError && <div role="alert" className="request-status">{loadError}<button onClick={() => load().catch(error => setLoadError(error.message))}>Retry loading application</button></div>}{applicationCards.length ? <div className="application-list">{applicationCards}</div> : <section className="empty-application"><h3>{savedView ? 'No saved application yet' : 'No submitted application yet'}</h3><p>{savedView ? 'Save a draft application to keep it here.' : 'Your application will appear here after you submit it for adviser review.'}</p>{savedView && <button className="button button-dark" onClick={startNewApplication} disabled={savedApplications.length >= 10}>Start a new application</button>}</section>}{savedView && savedApplications.length > 0 && <button className="button button-dark" onClick={startNewApplication} disabled={savedApplications.length >= 10}>Start a new application ({10 - savedApplications.length} slots left)</button>}</> : <>{loadError && <div role="alert" className="request-status">{loadError}<button onClick={() => load().catch(error => setLoadError(error.message))}>Retry loading application</button></div>}{snapshot === null && accountView === 'editor' ? <><div className="application-heading"><h2>Start a new application</h2></div><p>Complete the form, then save it as a draft or submit it. Your account can keep up to 10 drafts and 3 submitted applications.</p></> : !snapshot ? <p role="status">Loading your application…</p> : <>{snapshot.id && <p className="application-status-banner">Status: {({ draft: 'Draft', submitted: 'Awaiting adviser review', in_review: 'In review', complete: 'Processing complete', offer_received: 'Offer received' })[snapshot.status] || snapshot.status}</p>}{conflict && <div role="alert" className="request-status"><p>The application changed on the server. Your unsaved entries remain on this page. Copy anything you need before loading the latest version.</p><button onClick={() => { if (window.confirm('Discard unsaved entries and load the latest application?')) load(true).catch(mutationError) }}>Load latest application</button></div>}<ApplicationForm form={form} update={update} save={save} notice={notice} addressRef={addressRef} requestedDocuments={requestedDocuments} documentStatus={documentStatus} documentStatusText={documentStatusText} selectDocumentFile={selectDocumentFile} sendDocuments={sendDocuments} displayDocuments={requestedDocuments.length > 0} locked={locked} busy={busy || conflict} unavailableUniversities={unavailableUniversities} /><div className="single-application-actions">{snapshot.id && !locked && <button disabled={busy || conflict} className="delete-application" onClick={deleteApplication}>Delete application</button>}</div><p className="privacy-link">Read our <Link to="/privacy">privacy notice</Link> for information about your application and documents.</p></>}</>}</main></div>{supportOpen && <SupportModal user={currentUser} onClose={() => setSupportOpen(false)} onSent={messageCreated} />}</div>
 }
 
 function applicationProgress(data = {}) { return calculateApplicationProgress(data) }
@@ -300,6 +573,9 @@ function applicationProgress(data = {}) { return calculateApplicationProgress(da
 function AdvisorMessagesPage({ token, onBack, onSignOut, signOutError }) {
   const [messages, setMessages] = useState([])
   const [selectedMessage, setSelectedMessage] = useState(null)
+  const [thread, setThread] = useState(null)
+  const [reply, setReply] = useState('')
+  const [replyBusy, setReplyBusy] = useState(false)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -311,11 +587,23 @@ function AdvisorMessagesPage({ token, onBack, onSignOut, signOutError }) {
     let active = true
     const params = new URLSearchParams({ page: String(page), limit: '25', search, status: statusFilter, sort })
     const load = async () => { try { const result = await api(`/api/advisor/support-messages?${params}`); if (active) { setMessages(result.messages || []); setMeta(result); setSelectedMessage(current => result.messages?.some(message => message.id === current?.id) ? current : null); setError('') } } catch (err) { if (active) setError(err.message) } }
-    load(); const timer = window.setInterval(load, 30000)
+    load(); const timer = window.setInterval(load, 3000)
     return () => { active = false; window.clearInterval(timer) }
   }, [page, token, search, statusFilter, sort])
+  useEffect(() => {
+    if (!selectedMessage?.id) { setThread(null); return }
+    let active = true
+    const loadThread = async () => {
+      try { const result = await api(`/api/advisor/support-messages/${selectedMessage.id}/thread`); if (active) setThread(result) }
+      catch (err) { if (active) setError(err.message) }
+    }
+    loadThread()
+    const timer = window.setInterval(loadThread, 3000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [selectedMessage?.id])
   const openMessage = async message => {
     setSelectedMessage(message)
+    setReply('')
     if (message.readAt) return
     setBusy(true)
     try { await api(`/api/advisor/support-messages/${message.id}/read`, { method: 'PATCH' }); setMessages(items => items.map(item => item.id === message.id ? { ...item, readAt: new Date().toISOString() } : item)) } catch (err) { setError(err.message) } finally { setBusy(false) }
@@ -329,12 +617,24 @@ function AdvisorMessagesPage({ token, onBack, onSignOut, signOutError }) {
       setMeta(current => ({ ...current, total: Math.max(0, current.total - 1) }))
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
+  const sendReply = async event => {
+    event.preventDefault()
+    if (!selectedMessage || !reply.trim() || replyBusy) return
+    setReplyBusy(true); setError('')
+    try {
+      await api(`/api/advisor/support-messages/${selectedMessage.id}/replies`, { method: 'POST', body: { message: reply.trim() } })
+      setReply('')
+      setThread(await api(`/api/advisor/support-messages/${selectedMessage.id}/thread`))
+      const result = await api(`/api/advisor/support-messages?page=${page}&limit=25&search=${encodeURIComponent(search)}&status=${statusFilter}&sort=${sort}`)
+      setMessages(result.messages || []); setMeta(result)
+    } catch (err) { setError(err.message) } finally { setReplyBusy(false) }
+  }
   const updateFilter = setter => event => { setter(event.target.value); setPage(1); setSelectedMessage(null) }
-  return <div className="portal-page adviser-page"><div className="portal-top"><Link className="logo" to="/"><span>student</span><strong>advisor</strong><b>®</b></Link><ThemeToggle /><div className="portal-nav"><span>Adviser messages</span><button onClick={onSignOut}>Sign out</button></div></div><main className="adviser-main messages-page">{signOutError && <p role="alert" className="form-error">{signOutError}</p>}<button className="documents-back-link" onClick={onBack}>Back to applications</button><div className="adviser-heading"><h1>Student<br /><em>messages.</em></h1><span>{meta.total} messages</span></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="message-filters"><label>Search messages<input type="search" value={search} onChange={updateFilter(setSearch)} placeholder="Name, email, topic or message" /></label><label>Show<select value={statusFilter} onChange={updateFilter(setStatusFilter)}><option value="all">All messages</option><option value="unread">Unread</option><option value="read">Read</option></select></label><label>Sort by<select value={sort} onChange={updateFilter(setSort)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="unread_first">Unread first</option></select></label></div><div className="messages-layout"><section className="messages-list">{messages.map(message => <button disabled={busy} className={`${selectedMessage?.id === message.id ? 'message-row active' : 'message-row'}${message.readAt ? '' : ' unread'}`} key={message.id} onClick={() => openMessage(message)}><span className="message-avatar">{message.name?.[0]?.toUpperCase() || '?'}</span><span><strong>{message.name}</strong><small>{message.topic} · {message.readAt ? 'Read' : 'Unread'}</small><em>{new Date(message.createdAt).toLocaleString()}</em></span></button>)}{!messages.length && <p className="messages-empty">No messages match these filters.</p>}</section><section className="message-reader">{selectedMessage ? <><p className="eyebrow">{selectedMessage.topic}</p><h2>{selectedMessage.name}</h2><p className="message-meta">{selectedMessage.email} · {new Date(selectedMessage.createdAt).toLocaleString()}</p><div className="message-body">{selectedMessage.message}</div><div className="message-reader-actions"><a className="button button-dark message-respond" href="https://mail.hostinger.com/2/mailboxes/INBOX" target="_blank" rel="noreferrer">Respond in Hostinger Mail</a><button className="message-delete" disabled={busy} onClick={deleteMessage}>Delete message</button></div><p className="message-reply-hint">Find this enquiry using the reference in its email subject, then reply from your mailbox.</p></> : <p>Select a message to read it.</p>}</section></div><div className="pagination"><button disabled={page === 1} onClick={() => { setSelectedMessage(null); setPage(page - 1) }}>Previous</button><span>Page {page} · {meta.total} messages</span><button disabled={!meta.hasMore} onClick={() => { setSelectedMessage(null); setPage(page + 1) }}>Next</button></div></main></div>
+  return <div className="portal-page adviser-page"><div className="portal-top"><Link className="logo" to="/"><span>student</span><strong>advisor</strong><b>®</b></Link><ThemeToggle /><div className="portal-nav"><span>Adviser messages</span><button onClick={onSignOut}>Sign out</button></div></div><main className="adviser-main messages-page">{signOutError && <p role="alert" className="form-error">{signOutError}</p>}<button className="documents-back-link" onClick={onBack}>Back to applications</button><div className="adviser-heading"><h1>Student<br /><em>messages.</em></h1><span>{meta.total} messages</span></div>{error && <p role="alert" className="form-error">{error}</p>}<div className="message-filters"><label>Search messages<input type="search" value={search} onChange={updateFilter(setSearch)} placeholder="Name, email, topic or message" /></label><label>Show<select value={statusFilter} onChange={updateFilter(setStatusFilter)}><option value="all">All messages</option><option value="unread">Unread</option><option value="read">Read</option></select></label><label>Sort by<select value={sort} onChange={updateFilter(setSort)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="unread_first">Unread first</option></select></label></div><div className="messages-layout"><section className="messages-list">{messages.map(message => <button disabled={busy} className={`${selectedMessage?.id === message.id ? 'message-row active' : 'message-row'}${message.readAt ? '' : ' unread'}`} key={message.id} onClick={() => openMessage(message)}><span className="message-avatar">{message.name?.[0]?.toUpperCase() || '?'}</span><span><strong>{message.name}</strong><small>{message.topic} · {message.readAt ? 'Read' : 'Unread'}</small><em>{new Date(message.updatedAt || message.createdAt).toLocaleString()}</em></span>{!message.readAt && <b className="unread-count" aria-label="Unread student message">1</b>}</button>)}{!messages.length && <p className="messages-empty">No messages match these filters.</p>}</section><section className="message-reader">{selectedMessage ? <><p className="eyebrow">{thread?.message?.topic || selectedMessage.topic}</p><h2>{thread?.message?.name || selectedMessage.name}</h2><p className="message-meta">{thread?.message?.email || selectedMessage.email} · {new Date(thread?.message?.createdAt || selectedMessage.createdAt).toLocaleString()}</p><div className="conversation-thread" aria-live="polite">{thread?.message && <article className="conversation-message from-student"><div><strong>{thread.message.name}</strong><time>{new Date(thread.message.createdAt).toLocaleString()}</time></div><p>{thread.message.message}</p></article>}{(thread?.replies || []).map(item => <article className={`conversation-message ${item.senderRole === 'student' ? 'from-student' : 'from-adviser'}`} key={item.id}><div><strong>{item.senderName}</strong><time>{new Date(item.createdAt).toLocaleString()}</time></div><p>{item.message}</p></article>)}</div><form className="conversation-composer" data-analytics-label="message_reply" onSubmit={sendReply}><label htmlFor="advisor-message-reply">Reply to the student</label><textarea id="advisor-message-reply" maxLength={5000} required value={reply} onChange={event => setReply(event.target.value)} placeholder="Write your reply…" /><button data-analytics-label="message_reply" className="button button-dark" disabled={replyBusy || !reply.trim()}>{replyBusy ? 'Sending…' : 'Send reply'}</button></form><div className="message-reader-actions"><button className="message-delete" disabled={busy} onClick={deleteMessage}>Delete conversation</button><a className="message-respond" href="https://mail.hostinger.com/2/mailboxes/INBOX" target="_blank" rel="noreferrer">Open Hostinger Mail</a></div></> : <p>Select a message to read it.</p>}</section></div><div className="pagination"><button disabled={page === 1} onClick={() => { setSelectedMessage(null); setPage(page - 1) }}>Previous</button><span>Page {page} · {meta.total} messages</span><button disabled={!meta.hasMore} onClick={() => { setSelectedMessage(null); setPage(page + 1) }}>Next</button></div></main></div>
 }
 function AdvisorMessageBadge({ token }) {
   const [count, setCount] = useState(0)
-  useEffect(() => { let active = true; const load = () => api('/api/advisor/support-messages?page=1&limit=1').then(result => { if (active) setCount(result.unreadCount || 0) }).catch(() => {}); load(); const timer = window.setInterval(load, 30000); return () => { active = false; window.clearInterval(timer) } }, [token])
+  useEffect(() => { let active = true; const load = () => api('/api/advisor/support-messages?page=1&limit=1').then(result => { if (active) setCount(result.unreadCount || 0) }).catch(() => {}); load(); const timer = window.setInterval(load, 5000); return () => { active = false; window.clearInterval(timer) } }, [token])
   return <>Messages {count > 0 && <span className="message-badge">{count > 99 ? '99+' : count}</span>}</>
 }
 
@@ -373,7 +673,7 @@ function AdvisorDashboard() {
   const [messagesOpen, setMessagesOpen] = useState(false)
   const [pdfDownloading, setPdfDownloading] = useState(false)
   const listRequest = useRef(0)
-  const can = (permission) => preview || staffUser?.role === 'advisor' || (staffUser?.role === 'moderator' && staffUser?.permissions?.advisorDashboard === true && staffUser?.permissions?.[permission] === true)
+  const can = (permission) => preview || staffUser?.role === 'admin' || staffUser?.role === 'advisor' || (staffUser?.role === 'moderator' && (staffUser?.permissions?.adminPermissions === true || (staffUser?.permissions?.advisorDashboard === true && staffUser?.permissions?.[permission] === true)))
   const loadApplications = async (_currentToken = token, preserveError = false) => {
     if (preview) return
     const requestId = ++listRequest.current
@@ -507,7 +807,7 @@ function AdvisorDashboard() {
   const visibleApplications = applications
   const statusLabel = { submitted: 'Awaiting review', in_review: 'In processing', complete: 'Processed', draft: 'Draft', offer_received: 'Offer received' }
   const data = selected?.data || {}
-  return <div className="portal-page adviser-page"><div className="portal-top"><a className="logo" href="/"><span>student</span><strong>advisor</strong><b>®</b></a><ThemeToggle /><div className="portal-nav"><span>{staffUser?.role === 'moderator' ? 'Moderator dashboard' : 'Adviser dashboard'}</span><button data-preview-navigation onClick={() => setSecurityOpen(true)}>Account security</button><button disabled={loading} onClick={signOut}>Sign out</button></div></div><main className="adviser-main">{error && <p className="form-error adviser-error" role="alert">{error}</p>}<div className="adviser-heading"><div><p className="eyebrow">{staffUser?.role === 'moderator' ? 'Moderator workspace' : 'Adviser workspace'}</p><h1>Student<br /><em>applications.</em></h1></div><div className="adviser-heading-actions">{can('advisorMessages') && <button className="button button-dark" onClick={() => setMessagesOpen(true)}>{preview ? 'Messages' : <AdvisorMessageBadge token={token} />}</button>}<button className="button button-dark" onClick={() => loadApplications()}>Refresh applications</button></div></div><div className="adviser-stats"><div><strong>{applications.length}</strong><span>Applications on this page</span></div><div><strong>{applications.filter((item) => item.status === 'submitted').length}</strong><span>Awaiting review on this page</span></div><div><strong>{applications.filter((item) => item.status === 'in_review').length}</strong><span>In processing on this page</span></div></div><div className="adviser-toolbar"><div><button className={filter === 'all' ? 'active' : ''} onClick={() => { setPage(1); setFilter('all') }}>All</button><button className={filter === 'submitted' ? 'active' : ''} onClick={() => { setPage(1); setFilter('submitted') }}>Awaiting review</button><button className={filter === 'in_review' ? 'active' : ''} onClick={() => { setPage(1); setFilter('in_review') }}>In processing</button><button className={filter === 'complete' ? 'active' : ''} onClick={() => { setPage(1); setFilter('complete') }}>Processed</button><button className={filter === 'draft' ? 'active' : ''} onClick={() => { setPage(1); setFilter('draft') }}>Drafts</button></div><span>{loading ? 'Updating…' : `${visibleApplications.length} shown`}</span></div><div className="adviser-grid"><section className="adviser-application-list">{visibleApplications.length ? visibleApplications.map((application) => <button className={selected?.id === application.id ? 'adviser-application active' : 'adviser-application'} key={application.id} onClick={() => setSelectedId(application.id)}><span className={`status-dot ${application.status}`}></span><span><strong>{application.data?.firstName || application.firstName || 'Unnamed student'} {application.data?.lastName || application.lastName || ''}</strong><small>{application.email} · {application.data?.university || 'University not selected'} · {statusLabel[application.status]}</small></span><b>{application.progress ?? applicationProgress(application.data)}%</b></button>) : <div className="adviser-empty">No applications match this filter.</div>}</section>{selected ? <section className="adviser-detail"><div className="adviser-detail-top"><div><p className="eyebrow">{statusLabel[selected.status]}</p><h2>{data.firstName || selected.firstName || 'Unnamed'} {data.lastName || selected.lastName || ''}</h2><p>{selected.email} · {data.university || 'University not selected'} · {data.course || 'Course not selected'}</p><div className="adviser-actions">{can('advisorStatusUpdates') && selected.status === 'submitted' && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'in_review')}>Accept & start processing</button>}{can('advisorStatusUpdates') && selected.status === 'in_review' && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'complete')}>Mark as processed</button>}{can('advisorStatusUpdates') && ['complete', 'offer_received'].includes(selected.status) && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'in_review' )}>Reopen for editing</button>}<button className="button button-dark pdf-download-button" disabled={pdfDownloading} onClick={downloadApplicationPdf}>{pdfDownloading ? 'Preparing PDF…' : 'Download application PDF'}</button>{can('advisorDeleteApplications') && <button disabled={loading} className="delete-application adviser-delete" onClick={() => deleteApplication(selected.id)}>Delete application</button>}{can('advisorDocuments') && selected.status === 'in_review' && <button className="ask-documents-link" onClick={() => openDocumentRequest(selected)}>Ask documents</button>}</div></div><div className="adviser-progress" style={{ '--progress': `${applicationProgress(data)}%` }}><strong>{applicationProgress(data)}%</strong><span>complete</span></div></div>{documentRequestOpen && can('advisorDocuments') && <div className="document-request-panel"><div className="document-request-heading"><div><p className="eyebrow">Request documents</p><h3>Select what the student must upload.</h3></div><button aria-label="Close document request" className="document-request-close" onClick={() => setDocumentRequestOpen(false)}>×</button></div><div className="document-request-list">{documentCatalog.map(([key, label]) => <label className="document-request-row" key={key}><input type="checkbox" checked={documentSelection.includes(key)} onChange={() => toggleDocumentSelection(key)} /><span>{label}</span></label>)}</div><button disabled={loading} className="button button-dark" onClick={sendDocumentRequest}>Send</button></div>}{selected.requestedDocuments?.length > 0 && <div className="document-review-panel"><div className="document-review-heading"><div><p className="eyebrow">Document review</p><h3>Review student uploads.</h3></div></div>{selected.requestedDocuments.map((key) => { const document = documentCatalog.find(([documentKey]) => documentKey === key); const submission = selected.documentSubmissions?.[key] || { status: 'pending' }; if (!document) return null; return <div className="document-review-row" key={key}><div><strong>{document[1]}</strong><span className={`document-review-status ${submission.status}`}>{documentReviewLabel(submission.status)}</span>{submission.fileName && <small>{submission.fileName}</small>}</div><div className="document-review-actions">{submission.hasFile && <><button onClick={() => openDocumentFile(key)}>View</button><button onClick={() => openDocumentFile(key, true)}>Download</button></>}{can('advisorDocuments') && submission.status === 'submitted' && <button disabled={loading} className="accept-document" onClick={() => reviewDocument(key, 'accepted')}>Accept</button>}{can('advisorDocuments') && ['submitted', 'accepted'].includes(submission.status) && <button disabled={loading} onClick={() => reviewDocument(key, 'rejected')}>Reject & ask resubmit</button>}</div></div>})}</div>}{applicationSections.filter((section) => section.id !== 'documents').map((section) => <div className="adviser-section" key={section.id}><div><h3><EditableText field={`section.${section.id}`} label="Section title">{section.title}</EditableText></h3><span>{Math.round((section.fields.filter(field => field !== 'englishScore').filter((field) => String(data[field] || '').trim()).length / section.fields.filter(field => field !== 'englishScore').length) * 100)}%</span></div><dl>{section.fields.map((field) => <div key={field}><dt><EditableText field={`field.${field}`} label="Field label">{adviserFieldLabel(field)}</EditableText></dt><dd>{data[field] || 'Not provided'}</dd></div>)}</dl></div>)}</section> : <section className="adviser-detail adviser-empty"><strong>Select an application</strong><p>Student details will appear here.</p></section>}</div><div className="pagination"><button disabled={loading || page === 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} · {pageMeta.total} applications</span><button disabled={loading || !pageMeta.hasMore} onClick={() => setPage(page + 1)}>Next</button></div></main></div>
+  return <div className="portal-page adviser-page"><div className="portal-top"><a className="logo" href="/"><span>student</span><strong>advisor</strong><b>®</b></a><ThemeToggle /><div className="portal-nav"><span>{staffUser?.role === 'admin' ? 'Admin · Adviser workspace' : staffUser?.role === 'moderator' ? 'Moderator dashboard' : 'Adviser dashboard'}</span><button data-preview-navigation onClick={() => setSecurityOpen(true)}>Account security</button><button disabled={loading} onClick={signOut}>Sign out</button></div></div><main className="adviser-main">{error && <p className="form-error adviser-error" role="alert">{error}</p>}<div className="adviser-heading"><div><p className="eyebrow">{staffUser?.role === 'moderator' ? 'Moderator workspace' : 'Adviser workspace'}</p><h1>Student<br /><em>applications.</em></h1></div><div className="adviser-heading-actions">{can('advisorMessages') && <button className="button button-dark" onClick={() => setMessagesOpen(true)}>{preview ? 'Messages' : <AdvisorMessageBadge token={token} />}</button>}<button className="button button-dark" onClick={() => loadApplications()}>Refresh applications</button></div></div><div className="adviser-stats"><div><strong>{applications.length}</strong><span>Applications on this page</span></div><div><strong>{applications.filter((item) => item.status === 'submitted').length}</strong><span>Awaiting review on this page</span></div><div><strong>{applications.filter((item) => item.status === 'in_review').length}</strong><span>In processing on this page</span></div></div><div className="adviser-toolbar"><div><button className={filter === 'all' ? 'active' : ''} onClick={() => { setPage(1); setFilter('all') }}>All</button><button className={filter === 'submitted' ? 'active' : ''} onClick={() => { setPage(1); setFilter('submitted') }}>Awaiting review</button><button className={filter === 'in_review' ? 'active' : ''} onClick={() => { setPage(1); setFilter('in_review') }}>In processing</button><button className={filter === 'complete' ? 'active' : ''} onClick={() => { setPage(1); setFilter('complete') }}>Processed</button><button className={filter === 'draft' ? 'active' : ''} onClick={() => { setPage(1); setFilter('draft') }}>Drafts</button></div><span>{loading ? 'Updating…' : `${visibleApplications.length} shown`}</span></div><div className="adviser-grid"><section className="adviser-application-list">{visibleApplications.length ? visibleApplications.map((application) => <button className={selected?.id === application.id ? 'adviser-application active' : 'adviser-application'} key={application.id} onClick={() => setSelectedId(application.id)}><span className={`status-dot ${application.status}`}></span><span><strong>{application.data?.firstName || application.firstName || 'Unnamed student'} {application.data?.lastName || application.lastName || ''}</strong><small>{application.email} · {application.data?.university || 'University not selected'} · {statusLabel[application.status]}</small></span><b>{application.progress ?? applicationProgress(application.data)}%</b></button>) : <div className="adviser-empty">No applications match this filter.</div>}</section>{selected ? <section className="adviser-detail"><div className="adviser-detail-top"><div><p className="eyebrow">{statusLabel[selected.status]}</p><h2>{data.firstName || selected.firstName || 'Unnamed'} {data.lastName || selected.lastName || ''}</h2><p>{selected.email} · {data.university || 'University not selected'} · {data.course || 'Course not selected'}</p><div className="adviser-actions">{can('advisorStatusUpdates') && selected.status === 'submitted' && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'in_review')}>Accept & start processing</button>}{can('advisorStatusUpdates') && selected.status === 'in_review' && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'complete')}>Mark as processed</button>}{can('advisorStatusUpdates') && ['complete', 'offer_received'].includes(selected.status) && <button disabled={loading} className="button button-dark" onClick={() => updateApplicationStatus(selected.id, 'in_review' )}>Reopen for editing</button>}<button className="button button-dark pdf-download-button" disabled={pdfDownloading} onClick={downloadApplicationPdf}>{pdfDownloading ? 'Preparing PDF…' : 'Download application PDF'}</button>{can('advisorDeleteApplications') && <button disabled={loading} className="delete-application adviser-delete" onClick={() => deleteApplication(selected.id)}>Delete application</button>}{can('advisorDocuments') && selected.status === 'in_review' && <button className="ask-documents-link" onClick={() => openDocumentRequest(selected)}>Ask documents</button>}</div></div><div className="adviser-progress" style={{ '--progress': `${applicationProgress(data)}%` }}><strong>{applicationProgress(data)}%</strong><span>complete</span></div></div>{documentRequestOpen && can('advisorDocuments') && <div className="document-request-panel"><div className="document-request-heading"><div><p className="eyebrow">Request documents</p><h3>Select what the student must upload.</h3></div><button aria-label="Close document request" className="document-request-close" onClick={() => setDocumentRequestOpen(false)}>×</button></div><div className="document-request-list">{documentCatalog.map(([key, label]) => <label className="document-request-row" key={key}><input type="checkbox" checked={documentSelection.includes(key)} onChange={() => toggleDocumentSelection(key)} /><span>{label}</span></label>)}</div><button disabled={loading} className="button button-dark" onClick={sendDocumentRequest}>Send</button></div>}{selected.requestedDocuments?.length > 0 && <div className="document-review-panel"><div className="document-review-heading"><div><p className="eyebrow">Document review</p><h3>Review student uploads.</h3></div></div>{selected.requestedDocuments.map((key) => { const document = documentCatalog.find(([documentKey]) => documentKey === key); const submission = selected.documentSubmissions?.[key] || { status: 'pending' }; if (!document) return null; return <div className="document-review-row" key={key}><div><strong>{document[1]}</strong><span className={`document-review-status ${submission.status}`}>{documentReviewLabel(submission.status)}</span>{submission.fileName && <small>{submission.fileName}</small>}</div><div className="document-review-actions">{submission.hasFile && <><button onClick={() => openDocumentFile(key)}>View</button><button onClick={() => openDocumentFile(key, true)}>Download</button></>}{can('advisorDocuments') && submission.status === 'submitted' && <button disabled={loading} className="accept-document" onClick={() => reviewDocument(key, 'accepted')}>Accept</button>}{can('advisorDocuments') && ['submitted', 'accepted'].includes(submission.status) && <button disabled={loading} onClick={() => reviewDocument(key, 'rejected')}>Reject & ask resubmit</button>}</div></div>})}</div>}{applicationSections.filter((section) => section.id !== 'documents').map((section) => <div className="adviser-section" key={section.id}><div><h3><EditableText field={`section.${section.id}`} label="Section title">{section.title}</EditableText></h3><span>{Math.round((section.fields.filter(field => field !== 'englishScore').filter((field) => String(data[field] || '').trim()).length / section.fields.filter(field => field !== 'englishScore').length) * 100)}%</span></div><dl>{section.fields.map((field) => <div key={field}><dt><EditableText field={`field.${field}`} label="Field label">{adviserFieldLabel(field)}</EditableText></dt><dd>{data[field] || 'Not provided'}</dd></div>)}</dl></div>)}</section> : <section className="adviser-detail adviser-empty"><strong>Select an application</strong><p>Student details will appear here.</p></section>}</div><div className="pagination"><button disabled={loading || page === 1} onClick={() => setPage(page - 1)}>Previous</button><span>Page {page} · {pageMeta.total} applications</span><button disabled={loading || !pageMeta.hasMore} onClick={() => setPage(page + 1)}>Next</button></div></main></div>
 }
 
 class PortalErrorBoundary extends Component {
@@ -539,10 +839,10 @@ function UniversityDetail({ university, onBack, onApply }) {
     return () => { document.title = previousTitle }
   }, [university.name])
   return <div className="university-detail-page"><Helmet><html lang={locale} /><title>{university.name} | Student Advisor</title><meta name="description" content={description} /><link rel="canonical" href={canonical} /><link rel="alternate" hrefLang="en" href={`${SITE_URL}${localizedPath(`/universities/${universitySlug(university.name)}`, 'en')}`} /><link rel="alternate" hrefLang="ro" href={`${SITE_URL}${localizedPath(`/universities/${universitySlug(university.name)}`, 'ro')}`} /><link rel="alternate" hrefLang="x-default" href={`${SITE_URL}${localizedPath(`/universities/${universitySlug(university.name)}`, 'en')}`} /><meta property="og:type" content="website" /><meta property="og:title" content={`${university.name} | Student Advisor`} /><meta property="og:description" content={description} /><meta property="og:url" content={canonical} /><meta property="og:image" content={SOCIAL_IMAGE} /><meta name="twitter:card" content="summary_large_image" /><script type="application/ld+json">{JSON.stringify({ '@context': 'https://schema.org', '@type': 'CollegeOrUniversity', name: university.name, url: canonical, description, mainEntityOfPage: canonical, subjectOf: { '@type': 'WebPage', dateModified: CONTENT_REVIEWED, publisher: { '@id': `${SITE_URL}/#organization`, name: SITE_NAME } } })}</script><script type="application/ld+json">{JSON.stringify(organization)}</script></Helmet>
-    <header className="header detail-header"><button className="logo" onClick={onBack}><span>student</span><strong>advisor</strong><b>®</b></button><button className="detail-back" onClick={onBack}>{t('marketing.university.allInstitutions')}</button><button className="header-cta" onClick={() => onApply(university)}>{t('marketing.university.apply')}</button><LanguageSwitcher /><ThemeToggle /></header>
+    <header className="header detail-header"><button className="logo" onClick={onBack}><span>student</span><strong>advisor</strong><b>®</b></button><button className="detail-back" onClick={onBack}>{t('marketing.university.allInstitutions')}</button><button data-analytics-university={universitySlug(university.name)} data-analytics-label="apply" className="header-cta" onClick={() => onApply(university)}>{t('marketing.university.apply')}</button><LanguageSwitcher /><ThemeToggle /></header>
     <main>
       <section className="detail-hero">
-        <div className="detail-hero-copy"><p className="eyebrow">{t('marketing.university.profile')}</p><h1><EditableText field="profile.name" label="University name">{university.name}</EditableText></h1><p><EditableText field="profile.description" label="University description">{t(`marketing.universityDescriptions.${universitySlug(university.name)}`, { defaultValue: university.description })}</EditableText></p><button className="button button-dark" onClick={() => onApply(university)}>{t('marketing.university.applyHelp')}</button></div>
+        <div className="detail-hero-copy"><p className="eyebrow">{t('marketing.university.profile')}</p><h1><EditableText field="profile.name" label="University name">{university.name}</EditableText></h1><p><EditableText field="profile.description" label="University description">{t(`marketing.universityDescriptions.${universitySlug(university.name)}`, { defaultValue: university.description })}</EditableText></p><button data-analytics-university={universitySlug(university.name)} data-analytics-label="apply" className="button button-dark" onClick={() => onApply(university)}>{t('marketing.university.applyHelp')}</button></div>
         <div className="detail-logo-wrap"><EditableInlineImage field="profile.logo" label="University logo" fallback={university.logo} alt={t('marketing.university.placeholderLogo', { name: university.name })} /></div>
       </section>
       <section className="detail-content">
@@ -559,20 +859,33 @@ function MarketingHome({ query, setQuery, saved, toggleSaved, openUniversity, fo
   const locale = i18n.resolvedLanguage?.startsWith('ro') ? 'ro' : 'en'
   const steps = t('marketing.pathway.steps', { returnObjects: true })
   const topics = t('marketing.contact.topics', { returnObjects: true })
+  useEffect(() => {
+    const term = query.trim()
+    if (!term || term.length < 2 || term.length > 80) return
+    let timer
+    const queueKeyword = () => {
+      window.clearTimeout(timer)
+      if (analyticsConsent() !== 'granted') return
+      timer = window.setTimeout(() => trackCourseSearch(term), 900)
+    }
+    queueKeyword()
+    window.addEventListener('student-advisor-analytics-consent-change', queueKeyword)
+    return () => { window.clearTimeout(timer); window.removeEventListener('student-advisor-analytics-consent-change', queueKeyword) }
+  }, [query])
   return <><div className="site-shell">
     <div className="notice"><EditableText field="notice" label="Application notice">{t('marketing.notice', { stage: currentApplicationStage(new Date(), i18n.resolvedLanguage) })}</EditableText> <button onClick={() => setFormOpen(true)}>{t('marketing.startConversation')}</button></div>
     <header className="header"><a className="logo" href="#top"><span>student</span><strong>advisor</strong><b>®</b></a><ThemeToggle /><button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label={t('marketing.nav.menu')}>☰</button><nav className={menuOpen ? 'nav open' : 'nav'}><button onClick={() => scrollTo('explore')}>{t('marketing.nav.explore')}</button><button onClick={() => scrollTo('universities')}>{t('marketing.nav.universities')}</button><button onClick={() => scrollTo('pathway')}>{t('marketing.nav.howItWorks')}</button><button onClick={() => scrollTo('stories')}>{t('marketing.nav.advice')}</button><Link to={localizedPath('/blog', locale)}>{t('navigation.blog')}</Link></nav><div className="header-actions"><LanguageSwitcher /><button className="saved-link" onClick={() => scrollTo('universities')}>{t('marketing.nav.saved')} <span>{saved.length}</span></button><button className="account-link" onClick={() => openApplication()}>{t('marketing.nav.studentAccount')}</button><button className="header-cta" onClick={() => setFormOpen(true)}>{t('marketing.nav.talkToAdvisor')}</button></div></header>
     <main id="top">
-      <section className="hero"><div className="hero-copy"><p className="eyebrow"><EditableText field="hero.eyebrow" label="Hero eyebrow">{t('marketing.hero.eyebrow')}</EditableText></p><h1><EditableText field="hero.title" label="Hero heading">{t('marketing.hero.title')}</EditableText></h1><p className="hero-intro"><EditableText field="hero.intro" label="Hero introduction">{t('marketing.hero.intro')}</EditableText></p><div className="hero-actions"><button className="button button-dark" onClick={() => scrollTo('explore')}>{t('marketing.hero.findOptions')}</button><button className="watch-link" onClick={() => setFormOpen(true)}><u>{t('marketing.hero.ask')}</u></button></div></div><nav className="hero-guide-links" aria-label={t('navigation.aria')}><Link to={localizedPath('/free-student-advisory', locale)}>{t('navigation.freeAdvisory')}</Link><Link to={localizedPath('/university-admission', locale)}>{t('navigation.admission')}</Link><Link to={localizedPath('/study-in-uk', locale)}>{t('navigation.studyUk')}</Link></nav><div className="hero-visual"><EditableImage field="hero.primaryImage" label="Large hero image" className="hero-image image-one" fallback={homeImages.heroPrimary} overlay="linear-gradient(180deg,transparent 45%,#10131b45)" /><EditableImage field="hero.secondaryImage" label="Small hero image" className="hero-image image-two" fallback={homeImages.heroSecondary} overlay="linear-gradient(180deg,transparent 45%,#10131b33)" /><div className="hero-sticker">EXPLORE<br /><b>UK</b><br />UNIVERSITIES <span>✦</span></div></div></section>
-      <section className="intro-band"><p className="eyebrow"><EditableText field="intro.eyebrow" label="Introduction eyebrow">{t('marketing.intro.eyebrow')}</EditableText></p><div className="intro-grid"><h2><EditableText field="intro.title" label="Introduction heading">{t('marketing.intro.title')}</EditableText></h2><p><EditableText field="intro.copy" label="Introduction text">{t('marketing.intro.copy')}</EditableText></p></div></section>
+      <section className="hero" id="hero"><div className="hero-copy"><p className="eyebrow"><EditableText field="hero.eyebrow" label="Hero eyebrow">{t('marketing.hero.eyebrow')}</EditableText></p><h1><EditableText field="hero.title" label="Hero heading">{t('marketing.hero.title')}</EditableText></h1><p className="hero-intro"><EditableText field="hero.intro" label="Hero introduction">{t('marketing.hero.intro')}</EditableText></p><div className="hero-actions"><button className="button button-dark" onClick={() => scrollTo('explore')}>{t('marketing.hero.findOptions')}</button><button className="watch-link" onClick={() => setFormOpen(true)}><u>{t('marketing.hero.ask')}</u></button></div></div><nav className="hero-guide-links" aria-label={t('navigation.aria')}><Link to={localizedPath('/free-student-advisory', locale)}>{t('navigation.freeAdvisory')}</Link><Link to={localizedPath('/university-admission', locale)}>{t('navigation.admission')}</Link><Link to={localizedPath('/study-in-uk', locale)}>{t('navigation.studyUk')}</Link></nav><div className="hero-visual"><EditableImage field="hero.primaryImage" label="Large hero image" className="hero-image image-one" fallback={homeImages.heroPrimary} overlay="linear-gradient(180deg,transparent 45%,#10131b45)" /><EditableImage field="hero.secondaryImage" label="Small hero image" className="hero-image image-two" fallback={homeImages.heroSecondary} overlay="linear-gradient(180deg,transparent 45%,#10131b33)" /><div className="hero-sticker">EXPLORE<br /><b>UK</b><br />UNIVERSITIES <span>✦</span></div></div></section>
+      <section className="intro-band" id="introduction"><p className="eyebrow"><EditableText field="intro.eyebrow" label="Introduction eyebrow">{t('marketing.intro.eyebrow')}</EditableText></p><div className="intro-grid"><h2><EditableText field="intro.title" label="Introduction heading">{t('marketing.intro.title')}</EditableText></h2><p><EditableText field="intro.copy" label="Introduction text">{t('marketing.intro.copy')}</EditableText></p></div></section>
       <section className="explore-section" id="explore"><div className="section-top"><div><p className="eyebrow"><EditableText field="explore.eyebrow" label="Explore eyebrow">{t('marketing.explore.eyebrow')}</EditableText></p><h2><EditableText field="explore.title" label="Explore heading">{t('marketing.explore.title')}</EditableText></h2></div><p className="section-caption"><EditableText field="explore.caption" label="Explore caption">{t('marketing.explore.caption')}</EditableText></p></div><div className="explore-tools"><div className="search-box"><span>⌕</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('marketing.explore.placeholder')} aria-label={t('marketing.explore.placeholder')} /></div><div className="quick-links"><button onClick={() => setQuery('Business')}>{t('marketing.explore.business')}</button><button onClick={() => setQuery('Computer Science')}>{t('marketing.explore.computerScience')}</button><button onClick={() => setQuery('Design')}>{t('marketing.explore.design')}</button><button onClick={() => setQuery('')}>{t('marketing.explore.allCourses')}</button></div></div></section>
       <section className="pathway" id="pathway"><div className="section-top"><div><p className="eyebrow"><EditableText field="pathway.eyebrow" label="Process eyebrow">{t('marketing.pathway.eyebrow')}</EditableText></p><h2><EditableText field="pathway.title" label="Process heading">{t('marketing.pathway.title')}</EditableText></h2></div><p className="section-caption"><EditableText field="pathway.caption" label="Process caption">{t('marketing.pathway.caption')}</EditableText></p></div><div className="free-advice-note"><strong><EditableText field="pathway.promise" label="Advice promise">{t('marketing.pathway.promise')}</EditableText></strong><span><EditableText field="pathway.promiseCopy" label="Advice promise text">{t('marketing.pathway.promiseCopy')}</EditableText></span></div><div className="pathway-grid">{steps.map((step, index) => <article className="pathway-card" key={step.title}><span>0{index + 1}</span><div><h3><EditableText field={`pathway.step${index + 1}.title`} label={`Step ${index + 1} heading`}>{step.title}</EditableText></h3><p><EditableText field={`pathway.step${index + 1}.copy`} label={`Step ${index + 1} text`}>{step.copy}</EditableText></p><button onClick={() => setFormOpen(true)}>{t('marketing.pathway.talk')}</button></div></article>)}</div></section>
-      <section className="universities" id="universities"><div className="section-top"><div><p className="eyebrow"><EditableText field="directory.eyebrow" label="University directory eyebrow">{t('marketing.directory.eyebrow')}</EditableText></p><h2><EditableText field="directory.title" label="University directory heading">{t('marketing.directory.title')}</EditableText></h2></div><span className="all-link">{t('marketing.directory.count', { filtered: filtered.length, total: universities.length })}</span></div><div className="filters"><strong>{query ? t('marketing.directory.results', { query }) : t('marketing.directory.all')}</strong><span><EditableText field="directory.caption" label="University directory caption">{t('marketing.directory.caption')}</EditableText></span></div><div className="uni-grid">{filtered.map((university) => { const slug = universitySlug(university.name); return <article className="uni-card institution-card" key={university.name}><div className="uni-image institution-logo"><EditableInlineImage field={`directory.${slug}.logo`} label={`${university.name} image`} fallback={university.logo} alt={t('marketing.university.placeholderLogo', { name: university.name })} /><button className={saved.includes(university.name) ? 'heart saved' : 'heart'} onClick={() => toggleSaved(university.name)} aria-label={t('marketing.directory.save', { name: university.name })}>{saved.includes(university.name) ? '♥' : '♡'}</button></div><div className="uni-details"><p className="uni-city"><EditableText field={`directory.${slug}.campuses`} label={`${university.name} campus summary`}>{university.campuses.slice(0, 2).join(' · ') + (university.campuses.length > 2 ? ` · +${university.campuses.length - 2}` : '')}</EditableText></p><h3><EditableText field={`directory.${slug}.name`} label={`${university.name} display name`}>{university.name}</EditableText></h3><p className="uni-description"><EditableText field={`directory.${slug}.description`} label={`${university.name} description`}>{t(`marketing.universityDescriptions.${slug}`, { defaultValue: university.description })}</EditableText></p><div className="uni-footer"><button onClick={() => openUniversity(university)}>{t('marketing.directory.moreInfo')}</button></div></div></article> })}</div>{filtered.length === 0 && <div className="empty-state">{t('marketing.directory.noResults')} <button onClick={() => setQuery('')}>{t('marketing.directory.clear')}</button></div>}</section>
+      <section className="universities" id="universities"><div className="section-top"><div><p className="eyebrow"><EditableText field="directory.eyebrow" label="University directory eyebrow">{t('marketing.directory.eyebrow')}</EditableText></p><h2><EditableText field="directory.title" label="University directory heading">{t('marketing.directory.title')}</EditableText></h2></div><span className="all-link">{t('marketing.directory.count', { filtered: filtered.length, total: universities.length })}</span></div><div className="filters"><strong>{query ? t('marketing.directory.results', { query }) : t('marketing.directory.all')}</strong><span><EditableText field="directory.caption" label="University directory caption">{t('marketing.directory.caption')}</EditableText></span></div><div className="uni-grid">{filtered.map((university) => { const slug = universitySlug(university.name); return <article data-analytics-university={slug} className="uni-card institution-card" key={university.name}><div className="uni-image institution-logo"><EditableInlineImage field={`directory.${slug}.logo`} label={`${university.name} image`} fallback={university.logo} alt={t('marketing.university.placeholderLogo', { name: university.name })} /><button data-analytics-label="save" className={saved.includes(university.name) ? 'heart saved' : 'heart'} onClick={() => toggleSaved(university.name)} aria-label={t('marketing.directory.save', { name: university.name })}>{saved.includes(university.name) ? '♥' : '♡'}</button></div><div className="uni-details"><p className="uni-city"><EditableText field={`directory.${slug}.campuses`} label={`${university.name} campus summary`}>{university.campuses.slice(0, 2).join(' · ') + (university.campuses.length > 2 ? ` · +${university.campuses.length - 2}` : '')}</EditableText></p><h3><EditableText field={`directory.${slug}.name`} label={`${university.name} display name`}>{university.name}</EditableText></h3><p className="uni-description"><EditableText field={`directory.${slug}.description`} label={`${university.name} description`}>{t(`marketing.universityDescriptions.${slug}`, { defaultValue: university.description })}</EditableText></p><div className="uni-footer"><button data-analytics-label="details" onClick={() => openUniversity(university)}>{t('marketing.directory.moreInfo')}</button></div></div></article> })}</div>{filtered.length === 0 && <div className="empty-state">{t('marketing.directory.noResults')} <button onClick={() => setQuery('')}>{t('marketing.directory.clear')}</button></div>}</section>
       <section className="story" id="stories"><EditableImage field="story.image" label="Student story image" className="story-image" fallback={homeImages.story} overlay="linear-gradient(180deg,#10131b00,#10131b66)" /><div className="story-copy"><p className="eyebrow"><EditableText field="story.eyebrow" label="Story eyebrow">{t('marketing.story.eyebrow')}</EditableText></p><h2><EditableText field="story.title" label="Story heading">{t('marketing.story.title')}</EditableText></h2><p><EditableText field="story.copy" label="Story text">{t('marketing.story.copy')}</EditableText></p><button className="button button-light" onClick={() => setFormOpen(true)}>{t('marketing.story.cta')}</button></div><div className="story-quote">“</div></section>
       <HomeFaq />
     </main>
     <footer><a className="logo" href="#top"><span>student</span><strong>advisor</strong><b>®</b></a><p><EditableText field="footer.tagline" label="Footer tagline">{t('marketing.footer.tagline')}</EditableText></p><Link className="footer-terms" to="/privacy">Privacy notice</Link><a className="footer-terms" href="/terms">{t('marketing.footer.terms')}</a><button onClick={() => setFormOpen(true)}>{t('marketing.footer.contact')}</button><span>© 2026 Student Advisor</span></footer>
-    {formOpen && <AccessibleDialog title={t('marketing.contact.title')} onClose={() => setFormOpen(false)}>{submitted ? <div className="success"><div className="success-icon">✓</div><p className="eyebrow">{t('marketing.contact.received')}</p><h2>{t('marketing.contact.thanks')}</h2><p>{t('marketing.contact.reply')}</p><button className="button button-dark" onClick={() => { setFormOpen(false); setSubmitted(false) }}>{t('marketing.contact.back')}</button></div> : <><button className="close" aria-label="Close contact form" onClick={() => setFormOpen(false)}>×</button><p className="eyebrow">{t('marketing.contact.eyebrow')}</p><h2>{t('marketing.contact.title')}</h2><p className="modal-intro">{t('marketing.contact.intro')}</p><form onSubmit={submitContact}><label>{t('marketing.contact.name')}<input name="name" required placeholder={t('marketing.contact.namePlaceholder')} /></label><label>{t('marketing.contact.email')}<input name="email" required type="email" placeholder="alex@student.com" /></label><label>{t('marketing.contact.topic')}<select name="topic" required defaultValue=""><option value="" disabled>{t('marketing.contact.select')}</option>{topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label><label>{t('marketing.contact.message')}<textarea name="message" required placeholder={t('marketing.contact.messagePlaceholder')} /></label>{contactError && <p className="form-error" role="alert">{contactError}</p>}<button className="button button-dark full" disabled={contactSending} type="submit">{t('marketing.contact.send')}</button><p className="privacy-link"><Link to="/privacy">Privacy notice</Link></p></form></>}</AccessibleDialog>}
+    {formOpen && <AccessibleDialog title={t('marketing.contact.title')} onClose={() => setFormOpen(false)}>{submitted ? <div className="success"><div className="success-icon">✓</div><p className="eyebrow">{t('marketing.contact.received')}</p><h2>{t('marketing.contact.thanks')}</h2><p>{t('marketing.contact.reply')}</p><button className="button button-dark" onClick={() => { setFormOpen(false); setSubmitted(false) }}>{t('marketing.contact.back')}</button></div> : <><button className="close" aria-label="Close contact form" onClick={() => setFormOpen(false)}>×</button><p className="eyebrow">{t('marketing.contact.eyebrow')}</p><h2>{t('marketing.contact.title')}</h2><p className="modal-intro">{t('marketing.contact.intro')}</p><form data-analytics-label="support_enquiry" onSubmit={submitContact}><label>{t('marketing.contact.name')}<input name="name" required placeholder={t('marketing.contact.namePlaceholder')} /></label><label>{t('marketing.contact.email')}<input name="email" required type="email" placeholder="alex@student.com" /></label><label>{t('marketing.contact.topic')}<select name="topic" required defaultValue=""><option value="" disabled>{t('marketing.contact.select')}</option>{topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label><label>{t('marketing.contact.message')}<textarea name="message" required placeholder={t('marketing.contact.messagePlaceholder')} /></label>{contactError && <p className="form-error" role="alert">{contactError}</p>}<button data-analytics-label="support_enquiry" className="button button-dark full" disabled={contactSending} type="submit">{t('marketing.contact.send')}</button><p className="privacy-link"><Link to="/privacy">Privacy notice</Link></p></form></>}</AccessibleDialog>}
   </div></>
 }
 
@@ -665,7 +978,7 @@ function ScrollToRoutePosition() {
 }
 
 function Root() {
-  return <Suspense fallback={<main className="auth-card" role="status">Loading page…</main>}><Routes><Route path="/privacy" element={<PrivacyPage />} /><Route path="/verify-email/:token" element={<VerifyEmailPage />} /><Route path="/terms" element={<TermsPage backLabel="Back to website" onBack={() => { window.location.href = '/' }} />} /><Route path="/advisor/*" element={<AdvisorDashboard />} /><Route path="/admin/*" element={<AdminDashboard />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route path="/reset-password/:token" element={<ResetPasswordPage />} />{['en', 'ro', ''].map(prefix => <Route key={`editorial-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/free-student-advisory`} element={<EditorialPage pageKey="free-student-advisory" />} />)}{['en', 'ro', ''].map(prefix => <Route key={`study-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/study-in-uk`} element={<EditorialPage pageKey="study-in-uk" />} />)}{['en', 'ro', ''].map(prefix => <Route key={`admission-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/university-admission`} element={<EditorialPage pageKey="university-admission" />} />)}{['student-visa-costs', 'editorial-policy'].flatMap(pageKey => ['en', 'ro', ''].map(prefix => <Route key={`${pageKey}-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/${pageKey}`} element={<EditorialPage pageKey={pageKey} />} />))}{['en', 'ro', ''].map(prefix => <Route key={`blog-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/blog`} element={<BlogIndex />} />)}{['en', 'ro', ''].map(prefix => <Route key={`article-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/blog/:slug`} element={<BlogArticle />} />)}<Route path="*" element={<App />} /></Routes></Suspense>
+  return <Suspense fallback={<main className="auth-card" role="status">Loading page…</main>}><AnalyticsTracker /><AnalyticsConsent /><Routes><Route path="/privacy" element={<PrivacyPage />} /><Route path="/verify-email/:token" element={<VerifyEmailPage />} /><Route path="/terms" element={<TermsPage backLabel="Back to website" onBack={() => { window.location.href = '/' }} />} /><Route path="/advisor/*" element={<AdvisorDashboard />} /><Route path="/admin/*" element={<AdminDashboard />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route path="/reset-password/:token" element={<ResetPasswordPage />} />{['en', 'ro', ''].map(prefix => <Route key={`editorial-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/free-student-advisory`} element={<EditorialPage pageKey="free-student-advisory" />} />)}{['en', 'ro', ''].map(prefix => <Route key={`study-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/study-in-uk`} element={<EditorialPage pageKey="study-in-uk" />} />)}{['en', 'ro', ''].map(prefix => <Route key={`admission-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/university-admission`} element={<EditorialPage pageKey="university-admission" />} />)}{['student-visa-costs', 'editorial-policy'].flatMap(pageKey => ['en', 'ro', ''].map(prefix => <Route key={`${pageKey}-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/${pageKey}`} element={<EditorialPage pageKey={pageKey} />} />))}{['en', 'ro', ''].map(prefix => <Route key={`blog-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/blog`} element={<BlogIndex />} />)}{['en', 'ro', ''].map(prefix => <Route key={`article-${prefix || 'legacy'}`} path={`${prefix ? `/${prefix}` : ''}/blog/:slug`} element={<BlogArticle />} />)}<Route path="*" element={<App />} /></Routes></Suspense>
 }
 
 loadTranslations().then(() => createRoot(document.getElementById('root')).render(<StrictMode><HelmetProvider><ThemeProvider><BrowserRouter><SiteEditorProvider><ScrollToRoutePosition /><Root /></SiteEditorProvider></BrowserRouter></ThemeProvider></HelmetProvider></StrictMode>)).catch((error) => {

@@ -1,10 +1,12 @@
-export const AUTH_SCHEMA_VERSION = 1
+export const AUTH_SCHEMA_VERSION = 2
 async function addColumn(pool, table, definition) {
   try { await pool.query(`ALTER TABLE ${table} ADD COLUMN ${definition}`); return true } catch (error) { if (error.code !== 'ER_DUP_FIELDNAME') throw error; return false }
 }
 export async function migrateAuth(pool) {
   await pool.query('CREATE TABLE IF NOT EXISTS security_schema_versions (component VARCHAR(80) PRIMARY KEY, version INT NOT NULL) ENGINE=InnoDB')
   await addColumn(pool, 'users', 'email_verified BOOLEAN NOT NULL DEFAULT FALSE')
+  await addColumn(pool, 'users', 'profile_phone VARCHAR(32) NULL')
+  await addColumn(pool, 'users', 'pending_email VARCHAR(255) NULL UNIQUE')
   await addColumn(pool, 'users', 'auth_version INT NOT NULL DEFAULT 0')
   await addColumn(pool, 'users', 'totp_last_step BIGINT NULL')
   await addColumn(pool, 'users', 'login_failures INT NOT NULL DEFAULT 0')
