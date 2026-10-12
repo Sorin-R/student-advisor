@@ -17,6 +17,7 @@ export const REQUIRED_APPLICATION_FIELDS = Object.freeze([
   'countryOfBirth', 'country', 'homeAddress', 'city', 'postalCode',
   'nextOfKinName', 'nextOfKinPhone', 'school', 'schoolCountry', 'qualification',
   'graduationYear', 'englishTest', 'university', 'course', 'level', 'intake',
+  'employment', 'supportNeeds',
 ])
 export const MAX_APPLICATION_BYTES = 32 * 1024
 const CONTROL_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
@@ -60,7 +61,7 @@ export function validateApplicationData(value, { submitted = false, now = new Da
   }
   if (data.graduationYear && (!/^\d{4}$/.test(data.graduationYear) || +data.graduationYear < 1950 || +data.graduationYear > now.getUTCFullYear() + 10)) errors.push('Enter a valid graduation year.')
   if (data.level && !['Foundation', 'Undergraduate', 'Postgraduate'].includes(data.level)) errors.push('Choose a valid study level.')
-  if (data.englishTest === 'Born in UK and studied in UK' && data.nationality !== 'United Kingdom' && data.schoolCountry !== 'United Kingdom') errors.push('The English-test exemption requires a UK nationality or UK school.')
+  if (['Born in UK OR Studied in UK', 'Born in UK and studied in UK'].includes(data.englishTest) && data.countryOfBirth !== 'United Kingdom' && data.schoolCountry !== 'United Kingdom') errors.push('The English-test exemption requires being born in the UK or studying at a UK school.')
   if (submitted) {
     for (const key of REQUIRED_APPLICATION_FIELDS) if (!data[key]) errors.push(`${key} is required before submission.`)
     if (data.termsAccepted !== true) errors.push('Accept the Terms & Conditions before submitting.')
